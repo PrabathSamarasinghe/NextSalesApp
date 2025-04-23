@@ -8,6 +8,7 @@ const customerSchema = new mongoose.Schema({
     address: {
         type: String,
         required: true,
+        default: null,
     },
     phone: {
         type: String,
@@ -18,6 +19,7 @@ const customerSchema = new mongoose.Schema({
         type: String,
         required: true,
         unique: true,
+        default: null,
     },
     epfNumber: {
         type: String,

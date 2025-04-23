@@ -49,48 +49,6 @@ interface Product {
 
 export default function InvoiceEntry(): JSX.Element {
 
-//   useEffect(() => {
-//     const fetchCustomers = async () => {
-//       api
-//         .get("/customers/customers")
-//         .then((response) => {
-//           setCustomers(response.data);
-//         })
-//         .catch((error) => {
-//           console.error("Error fetching customers:", error);
-//         });
-//     };
-
-//     const fetchProducts = async () => {
-//       api
-//         .get("/products/products")
-//         .then((response) => {
-//           setProducts(response.data);
-//         })
-//         .catch((error) => {
-//           console.error("Error fetching products:", error);
-//         });
-//     };
-
-//     const fetchNewInvoiceNumber = async () => {
-//       api
-//         .get("invoices/new/invoice-number")
-//         .then((response) => {        
-//           setInvoice({
-//             ...invoice,
-//             invoiceNumber: response.data.nextInvoiceNumber,
-//           });
-//           loadingContext.setLoading(false);
-//         })
-//         .catch((error) => {
-//           console.error("Error fetching new invoice number:", error);
-//         });
-//     }
-//     fetchNewInvoiceNumber();
-//     fetchProducts();
-//     fetchCustomers();
-//   }, []);
-
 useEffect(() => {
     const fetchCustomers = async () => {
       const response = await fetch("/api/customer/all");

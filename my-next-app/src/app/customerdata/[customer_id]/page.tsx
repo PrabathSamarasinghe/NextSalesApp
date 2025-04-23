@@ -31,12 +31,17 @@ export default function CustomerDetails() {
   });
   useEffect(() => {
     const fetchCustomer = async () => {
-      const response = await fetch(`/api/customer/getcustomer/${customer_id}`);
+      const response = await fetch(`/api/customer/getcustomer/${customer_id}`, {
+        method: 'GET',
+      });
       if (response.ok) {
         const data = await response.json();
-        console.log(data);
-        
         setCustomer(data);
+        const totalSpent = await fetch(`/api/invoice/other/${customer_id}`, {
+          method: 'GET',
+        });
+        const totalData = await totalSpent.json();
+        setCustomer(prev => ({ ...prev, totalSpent: totalData.totalSpent }));
       } else {
         console.error("Failed to fetch customer data");
       }
@@ -50,6 +55,7 @@ export default function CustomerDetails() {
             console.error("Failed to fetch invoices data");
         }
     };
+    
     fetchInvoices();
     fetchCustomer();
   }, []);
@@ -197,26 +203,18 @@ export default function CustomerDetails() {
                             </span>
                           ) : (
                             <button
-                              onClick={() => {
-                                // api
-                                //   .put(`/invoices/invoice/${invoice._id}`, {
-                                //     isPaid: true,
-                                //   })
-                                //   .then(() => {
-                                //     setInvoices((prevInvoices) =>
-                                //       prevInvoices.map((inv) =>
-                                //         inv._id === invoice._id
-                                //           ? { ...inv, isPaid: true }
-                                //           : inv
-                                //       )
-                                //     );
-                                //   })
-                                //   .catch((error) => {
-                                //     console.error(
-                                //       "Failed to update invoice:",
-                                //       error
-                                //     );
-                                //   });
+                              onClick={async () => {
+                                await fetch(
+                                  `/api/invoice/paid`,{
+                                    method: "POST",
+                                    headers: {
+                                      "Content-Type": "application/json",
+                                    },
+                                    body: JSON.stringify({
+                                      invoiceId: invoice._id,
+                                    }),
+                                  }
+                                );
                               }}
                               className="inline-flex items-center justify-center px-3 py-2 text-sm font-medium rounded-md bg-red-100 text-red-800 border border-red-300 hover:bg-red-200 w-full cursor-pointer focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1 transition-colors duration-200"
                             >
