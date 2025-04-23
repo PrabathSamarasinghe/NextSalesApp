@@ -34,8 +34,6 @@ interface InvoiceData {
   customerDetails: CustomerDetails;
   isPaid: boolean;
   items: InvoiceItem[];
-  subtotal: number;
-  tax: number;
   total: number;
   notes: string;
 }
@@ -91,8 +89,6 @@ useEffect(() => {
     },
     isPaid: false,
     items: [{ id: 1, name: "", product: "", quantity: 1, price: 0, total: 0 }],
-    subtotal: 0,
-    tax: 0,
     total: 0,
     notes: "",
   });
@@ -144,8 +140,6 @@ useEffect(() => {
     setInvoice({
       ...invoice,
       items: updatedItems,
-      subtotal,
-      tax,
       total,
     });
   };
@@ -175,8 +169,6 @@ useEffect(() => {
       setInvoice({
         ...invoice,
         items: filteredItems,
-        subtotal,
-        tax,
         total,
       });
     }
@@ -553,18 +545,9 @@ useEffect(() => {
               </div>
               <div className="w-full md:w-1/2 lg:w-1/3">
                 <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                  <div className="flex justify-between py-2">
-                    <span className="text-gray-600">Subtotal:</span>
-                    <span className="font-medium">
-                      {formatCurrency(invoice.subtotal)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between py-2">
-                    <span className="text-gray-600">Tax (10%):</span>
-                    <span className="font-medium">
-                      {formatCurrency(invoice.tax)}
-                    </span>
-                  </div>
+                  <h3 className="text-sm font-medium text-gray-700 mb-2">
+                    Invoice Summary
+                  </h3>
                   <div className="flex justify-between py-3 border-t border-gray-300 mt-2">
                     <span className="text-gray-800 font-semibold">Total:</span>
                     <span className="text-gray-800 font-bold text-lg">

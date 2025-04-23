@@ -167,10 +167,14 @@ export default function InvoicesList() {
 
   const handleViewInvoice = async (invoiceId: string) => {
     try {
-      //   api.get(`/invoices/invoices/${invoiceId}`).then((res) => {
-      //     setSelectedInvoice(res.data);
-      //   });
-
+      const response = await fetch(`/api/invoice/getinvoice/${invoiceId}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      const data = await response.json();
+      setSelectedInvoice(data);
       setShowDetailsModal(true);
     } catch (error) {
       console.error("Error fetching invoice details:", error);
@@ -366,7 +370,7 @@ export default function InvoicesList() {
                           {new Date(invoice.date).toLocaleDateString()}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">
-                          ${invoice.total.toFixed(2)}
+                          Rs.{invoice.total.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-center">
                           <StatusBadge isPaid={invoice.isPaid} />
@@ -427,7 +431,7 @@ export default function InvoicesList() {
 
       {/* Invoice Details Modal */}
       {showDetailsModal && selectedInvoice && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold">Invoice Details</h2>
@@ -483,9 +487,9 @@ export default function InvoicesList() {
                   <tr key={index} className="border-b">
                     <td className="px-4 py-2">{item.name}</td>
                     <td className="px-4 py-2 text-right">{item.quantity}</td>
-                    <td className="px-4 py-2 text-right">${item.price}</td>
+                    <td className="px-4 py-2 text-right">Rs.{item.price.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}</td>
                     <td className="px-4 py-2 text-right">
-                      ${(item.quantity * item.price).toFixed(2)}
+                      Rs.{(item.quantity * item.price).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
                     </td>
                   </tr>
                 ))}
@@ -496,7 +500,7 @@ export default function InvoicesList() {
                     Total:
                   </td>
                   <td className="px-4 py-2 text-right">
-                    ${selectedInvoice.total.toFixed(2)}
+                    Rs.{selectedInvoice.total.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
                   </td>
                 </tr>
               </tfoot>

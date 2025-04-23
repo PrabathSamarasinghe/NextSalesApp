@@ -102,7 +102,9 @@ export async function getStatistics() {
         const totalProducts = await Products.countDocuments();
         const totalInvoices = await Invoice.countDocuments();
         const invoices = await Invoice.find();
-        const totalRevenue = invoices.reduce((sum, invoice) => sum + invoice.total, 0);
+        const totalRevenue = invoices.reduce((sum, invoice) => {
+            return sum + (invoice.isCancelled ? 0 : Number(invoice.total));
+        }, 0);
 
         return {
             totalCustomers,

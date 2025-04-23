@@ -25,9 +25,7 @@ const AddCustomer = ({setIsModalOpen}: AddCustomerProps) => {
   });
 
   const handleAddCustomer = async (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log("New customer data:", newCustomer);
-    
+    e.preventDefault();    
     try {
       const response = await fetch("/api/customer/create", {
         method: "POST",
