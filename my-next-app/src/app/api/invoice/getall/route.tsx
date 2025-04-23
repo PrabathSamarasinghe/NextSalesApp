@@ -9,7 +9,7 @@ export async function GET(request: Request) {
         "Content-Type": "application/json",
       },
     });
-  } catch (error) {
-    return new Response("Error fetching invoices", { status: 500 });
+  } catch (error: unknown) {
+    return new Response((error as Error).message, { status: 500 });
   }
 }

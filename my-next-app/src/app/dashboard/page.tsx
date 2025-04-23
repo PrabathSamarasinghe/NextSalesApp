@@ -75,7 +75,7 @@ useEffect(() => {
         try {
             const response = await fetch("/api/invoice/topselling");
             const data = await response.json();
-            const products = data.map((product: any) => ({
+            const products = data.map((product: { id: string; productName: string; totalRevenue: number; totalQuantity: number; }) => ({
                 name: product.productName,
                 sales: `Rs.${product.totalRevenue.toFixed(2)}`,
                 quantity: product.totalQuantity,
@@ -89,7 +89,7 @@ useEffect(() => {
         try {
             const response = await fetch("/api/invoice/recentinvoices");
             const data = await response.json();
-            const invoices = data.map((invoice: any) => ({
+            const invoices = data.map((invoice: { id: string; invoiceNumber: string; customerDetails: { name: string }; date: string; total: number; isPaid: boolean; isCancelled: boolean; }) => ({
                 id: invoice.invoiceNumber,
                 customer: invoice.customerDetails.name,
                 date: new Date(invoice.date).toLocaleDateString(),
@@ -115,7 +115,7 @@ useEffect(() => {
           <div className="mb-4 sm:mb-0">
             <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
             <p className="text-gray-600 mt-1">
-              Welcome back! Here's an overview of your business.
+              Welcome back! Here is an overview of your business.
             </p>
           </div>
           <div className="flex flex-wrap gap-3">

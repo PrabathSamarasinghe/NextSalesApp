@@ -4,7 +4,7 @@ export const GET = async () => {
   try {
     const customers = await getCustomers();
     return new Response(JSON.stringify(customers), { status: 200 });
-  } catch (error) {
-    return new Response("Failed to fetch customers", { status: 500 });
+    } catch (error: unknown) {
+    return new Response((error as Error).message, { status: 500 });
   }
 };

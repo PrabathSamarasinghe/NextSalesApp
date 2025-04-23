@@ -5,7 +5,6 @@ import { Search, ArrowUpDown, ArrowLeft, ChevronRight, Plus } from 'lucide-react
 import { useRouter } from 'next/navigation';
 
 import AddCustomer from '@/components/AddCustomer';
-import { useContext } from "react";
 
 
 interface CustomerDetails {

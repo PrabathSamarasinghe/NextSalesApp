@@ -5,7 +5,8 @@ export const POST = async (request: Request) => {
     const productData = await request.json();
     const newProduct = await addProduct(productData);
     return new Response(JSON.stringify(newProduct), { status: 201 });
-  } catch (error) {
+  } catch (error: unknown) {
+    console.error("Error creating product:", error); 
     return new Response("Failed to create product", { status: 500 });
   }
 };

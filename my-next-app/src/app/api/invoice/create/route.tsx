@@ -6,7 +6,7 @@ export async function POST(request: Request) {
   try {
     const newInvoice = await createInvoice(invoice);
     return new Response(JSON.stringify(newInvoice), { status: 201 });
-  } catch (error) {
-    return new Response("Error creating invoice", { status: 500 });
+  } catch (error: unknown) {
+    return new Response((error as Error).message, { status: 500 });
   }
 }

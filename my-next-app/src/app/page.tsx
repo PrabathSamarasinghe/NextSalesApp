@@ -13,7 +13,7 @@ const LoginPage = () => {
     const [successMessage, setSuccessMessage] = useState('');
     const [rememberMe, setRememberMe] = useState(false);
 
-    const handleChange = (e: { target: { name: any; value: any; }; }) => {
+    const handleChange = (e: { target: { name: string; value: string; }; }) => {
         const { name, value } = e.target;
         setFormData({
             ...formData,
@@ -165,7 +165,7 @@ const LoginPage = () => {
                 </div>
                 
                 <p className="text-center text-sm text-gray-600">
-                    Don't have an account?{" "}
+                    Dont have an account?{" "}
                     <a href="/signup" className="font-medium text-blue-600 hover:text-blue-800 transition-colors">
                         Register Now
                     </a>

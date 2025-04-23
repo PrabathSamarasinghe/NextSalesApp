@@ -184,8 +184,8 @@ export default function ProductsPage() {
                     </button>
                     <button
                       className="text-red-600 hover:text-red-900"
-                      onClick={() => {
-                        const response = fetch(`/api/product/delete`, {
+                      onClick={async () => {
+                        await fetch(`/api/product/delete`, {
                           method: "DELETE",
                             headers: {
                                 "Content-Type": "application/json",

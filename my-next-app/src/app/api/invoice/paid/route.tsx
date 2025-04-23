@@ -5,8 +5,8 @@ export async function POST(request: Request) {
   try {
     const response = await markAsPaid(invoiceId);
     return new Response(JSON.stringify(response), { status: 200 });
-  } catch (error) {
-    return new Response(JSON.stringify({ error: "Failed to mark as paid" }), {
+  } catch (error: unknown) {
+    return new Response((error as Error).message, {
       status: 500,
     });
   }

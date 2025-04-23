@@ -16,7 +16,7 @@ export default function Error({
             router.push('/'); // Redirect to home page after 5 seconds
         }
         , 5000); // Adjust the timeout as needed
-    }, [error]);
+    }, [error, router]);
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-100">

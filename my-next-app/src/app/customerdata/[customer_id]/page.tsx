@@ -58,7 +58,7 @@ export default function CustomerDetails() {
     
     fetchInvoices();
     fetchCustomer();
-  }, []);
+  });
 
   interface InvoiceItem {
     name: string;

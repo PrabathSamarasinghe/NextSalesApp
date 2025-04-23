@@ -6,7 +6,8 @@ export async function GET() {
     return new Response(JSON.stringify(topSellingProducts), {
       status: 200,
     });
-  } catch (error) {
+  } catch (error: unknown) {
+    console.error("Error fetching top selling products:", error);
     return new Response("Internal Server Error", { status: 500 });
   }
 }

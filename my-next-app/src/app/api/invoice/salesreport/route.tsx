@@ -12,10 +12,13 @@ export async function GET(request: Request) {
             }
         };
         const salesReport = await getProductSalesReport(requestWithQuery, {
-            status: function(code: number) {
-                const response = function() {};
-                response.json = function(data: any) { return data; };
-                return response as any;
+            status: function(statusCode: number) {
+                const response = function() {} as any;
+                response.json = function(data: { success: boolean; data?: any[]; summary?: any; dateRange?: { startDate: string | undefined; endDate: string | undefined; }; message?: string; error?: any; }) {
+                    return data;
+                };
+                response.status = statusCode;
+                return response;
             }
         });
         return new Response(JSON.stringify(salesReport), {

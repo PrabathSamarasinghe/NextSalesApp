@@ -7,7 +7,7 @@ export async function GET(request: Request) {
       status: 200,
       headers: { "Content-Type": "application/json" },
     });
-  } catch (error) {
-    return new Response("Error fetching invoice number", { status: 500 });
+  } catch (error: unknown) {
+    return new Response((error as Error).message, { status: 500 });
   }
 }
