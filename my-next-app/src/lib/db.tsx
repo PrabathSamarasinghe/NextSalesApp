@@ -8,8 +8,8 @@ const connectDB = async () => {
         }
         const conn = await mongoose.connect(process.env.MONGO_URI);
         console.log(`MongoDB Connected: ${conn.connection.host}`);
-    } catch (error: any) {
-        console.error(`Error: ${error.message}`);
+    } catch (error: unknown) {
+        console.error(`Error: ${error instanceof Error ? error.message : 'An unknown error occurred'}`);
         process.exit(1);
     }
 }

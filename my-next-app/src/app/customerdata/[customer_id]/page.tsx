@@ -68,7 +68,7 @@ export default function CustomerDetails() {
     total: string;
   }
   interface Invoice {
-    isPaid: any;
+    isPaid: boolean;
     _id: string;
     invoiceNumber: string;
     date: string;

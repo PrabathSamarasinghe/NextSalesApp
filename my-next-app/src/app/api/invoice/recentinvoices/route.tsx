@@ -1,6 +1,6 @@
 import { getRecentInvoices } from "@/lib/controllers/invoiceControllers/Invoice.controllers";
 
-export async function GET(request: Request) {
+export async function GET() {
   try {
     const response = await getRecentInvoices();
     return new Response(JSON.stringify(response), { status: 200 });

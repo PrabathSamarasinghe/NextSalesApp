@@ -1,6 +1,6 @@
 import { getAllInvoices } from "@/lib/controllers/invoiceControllers/Invoice.controllers";
 
-export async function GET(request: Request) {
+export async function GET() {
   try {
     const invoices = await getAllInvoices();
     return new Response(JSON.stringify(invoices), {

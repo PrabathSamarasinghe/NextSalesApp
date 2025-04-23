@@ -27,7 +27,7 @@ const AddCustomer = ({setIsModalOpen}: AddCustomerProps) => {
   const handleAddCustomer = async (e: React.FormEvent) => {
     e.preventDefault();    
     try {
-      const response = await fetch("/api/customer/create", {
+      await fetch("/api/customer/create", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -6,10 +6,10 @@ export async function getProducts() {
     await connectDB();
     const products = await Product.find({});
     return products;
-  } catch (error: any) {
+  } catch (error: unknown) {
     return { 
         status: 500, 
-        message: error.message 
+         message: error instanceof Error ? error.message : 'An unknown error occurred'
     };
 }
 };
@@ -20,10 +20,10 @@ export async function addProduct(productData: any) {
     const product = new Product(productData);
     await product.save();
     return product;
-  } catch (error: any) {
+  } catch (error: unknown) {
     return { 
         status: 500, 
-        message: error.message 
+         message: error instanceof Error ? error.message : 'An unknown error occurred'
     };
 }
 }
@@ -33,10 +33,10 @@ export async function deleteProduct(id: string) {
     await connectDB();
     const product = await Product.findByIdAndDelete(id);
     return product;
-  } catch (error: any) {
+  } catch (error: unknown) {
     return { 
         status: 500, 
-        message: error.message 
+         message: error instanceof Error ? error.message : 'An unknown error occurred'
     };
 }
 }
@@ -46,10 +46,10 @@ export async function updatedProduct(id: string, productData: any) {
     await connectDB();
     const product = await Product.findByIdAndUpdate(id, productData, { new: true });
     return product;
-  } catch (error: any) {
+  } catch (error: unknown) {
     return { 
         status: 500, 
-        message: error.message 
+         message: error instanceof Error ? error.message : 'An unknown error occurred'
     };
 }
 }

@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { ArrowLeft, ChevronDown, TrendingUp, DollarSign, Package } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useContext } from "react";
 
 interface ProductSalesData {
   productId: string;

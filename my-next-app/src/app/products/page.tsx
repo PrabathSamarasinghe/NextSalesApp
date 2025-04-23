@@ -70,7 +70,6 @@ export default function ProductsPage() {
   };
 
   const handleAddProduct = async (newProduct: {
-    id: string;
     name: string;
     price: number;
     category: string;
@@ -243,20 +242,20 @@ function AddProductModal({
   onAdd,
 }: {
   onClose: () => void;
-  onAdd: (data: any) => void;
+  onAdd: (data: { name: string; price: number; category: string; stock: number; }) => void;
 }) {
   const [formData, setFormData] = useState({
     name: "",
-    price: "",
+    price: 0,
     category: "",
-    stock: "",
+    stock: 0,
   });
 
   const handleChange = (e: { target: { name: any; value: any } }) => {
     const { name, value } = e.target;
     setFormData({
       ...formData,
-      [name]: value,
+      [name]: name === "price" ? parseFloat(value) : name === "stock" ? parseInt(value, 10) : value,
     });
   };
 
@@ -265,8 +264,8 @@ function AddProductModal({
     // Convert string values to appropriate types
     const processedData = {
       ...formData,
-      price: parseFloat(formData.price),
-      stock: parseInt(formData.stock, 10),
+      price: formData.price,
+      stock: formData.stock,
     };
     onAdd(processedData);
   };
