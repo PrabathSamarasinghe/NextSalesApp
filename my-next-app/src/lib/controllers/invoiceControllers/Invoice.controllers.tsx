@@ -193,8 +193,7 @@ export const getInvoiceById = async (id : string) => {
     throw error;
   }
 };
-
-export const getProductSalesReport = async (req: { query: { timeFrame: any; startDate: any; endDate: any; }; }, res: { status: (arg0: number) => { (): any; new(): any; json: { (arg0: { success: boolean; data?: any[]; summary?: any; dateRange?: { startDate: any; endDate: any; }; message?: string; error?: any; }): any; new(): any; }; }; }) => {
+export const getProductSalesReport = async (req: Request & { query: { timeFrame?: string, startDate?: string, endDate?: string } }, res: { status: (arg0: number) => { (): any; new(): any; json: { (arg0: { success: boolean; data?: any[]; summary?: any; dateRange?: { startDate: string | undefined; endDate: string | undefined; }; message?: string; error?: any; }): any; new(): any; }; }; }) => {
   try {
     await connectDB();
     // Parse time frame or date range from request

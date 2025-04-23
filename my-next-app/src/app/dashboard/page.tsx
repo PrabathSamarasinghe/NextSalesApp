@@ -53,64 +53,6 @@ export default function Dashboard() {
 
   const router = useRouter();
 
-//   useEffect(() => {
-//     const fetchedInvoices = () => {
-//       loadingContext.setLoading(true);
-//       api
-//         .get("/invoices/recent/invoices")
-//         .then((response) => {
-//           const invoices = response.data.map((invoice: any) => ({
-//             id: invoice.invoiceNumber,
-//             customer: invoice.customerDetails.name,
-//             date: new Date(invoice.date).toLocaleDateString(),
-//             amount: `Rs.${invoice.total.toFixed(2)}`,
-//             status: invoice.isPaid,
-//             isCancelled: invoice.isCancelled,
-//           }));
-
-//           setRecentInvoices(invoices);
-//         })
-//         .catch((error) =>
-//           console.error("Error fetching recent invoices:", error)
-//         );
-//     };
-
-//     const fetchTopProducts = () => {
-//       api
-//         .get("/invoices/products/top-selling")
-//         .then((response) => {
-//           const products = response.data.map((product: any) => ({
-//             name: product.productName,
-//             sales: `Rs.${product.totalRevenue.toFixed(2)}`,
-//             quantity: product.totalQuantity,
-//           }));
-
-//           setTopProducts(products);
-//         })
-//         .catch((error) => console.error("Error fetching top products:", error));
-//     };
-
-//     const fetchStats = () => {
-//       api
-//         .get("/admin/statistics")
-//         .then((response) => {
-//           const stats = response.data;
-//           setStats({
-//             totalSales: `Rs.${stats.totalRevenue
-//               .toFixed(2)
-//               .replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`,
-//             invoicesIssued: stats.totalInvoices,
-//             activeCustomers: stats.totalCustomers,
-//             totalProducts: stats.totalProducts,
-//           });
-//         })
-//         .catch((error) => console.error("Error fetching stats:", error))
-//         .finally(() => loadingContext.setLoading(false));
-//     };
-//     fetchStats();
-//     fetchTopProducts();
-//     fetchedInvoices();
-//   }, []);
 useEffect(() => {
     const fetchStats = async () => {
         try {
@@ -128,7 +70,42 @@ useEffect(() => {
             console.error("Error fetching stats:", error);
         }
         }
-        fetchStats();
+
+    const fetchTopProducts = async () => {
+        try {
+            const response = await fetch("/api/invoice/topselling");
+            const data = await response.json();
+            const products = data.map((product: any) => ({
+                name: product.productName,
+                sales: `Rs.${product.totalRevenue.toFixed(2)}`,
+                quantity: product.totalQuantity,
+            }));
+            setTopProducts(products);
+        } catch (error) {
+            console.error("Error fetching top products:", error);
+        }
+    };
+    const fetchRecentInvoices = async () => {
+        try {
+            const response = await fetch("/api/invoice/recentinvoices");
+            const data = await response.json();
+            const invoices = data.map((invoice: any) => ({
+                id: invoice.invoiceNumber,
+                customer: invoice.customerDetails.name,
+                date: new Date(invoice.date).toLocaleDateString(),
+                amount: `Rs.${invoice.total.toFixed(2)}`,
+                status: invoice.isPaid,
+                isCancelled: invoice.isCancelled,
+            }));
+            setRecentInvoices(invoices);
+        } catch (error) {
+            console.error("Error fetching recent invoices:", error);
+        }
+    };
+    fetchRecentInvoices();
+    fetchStats();
+    fetchTopProducts();
+
 }, []);
 
   return (
@@ -150,7 +127,7 @@ useEffect(() => {
               Sales Report
             </Link>
             <Link
-              href="/invoices/new"
+              href="/newInvoice"
               className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-150 ease-in-out"
             >
               <Plus className="w-4 h-4 mr-2" />
