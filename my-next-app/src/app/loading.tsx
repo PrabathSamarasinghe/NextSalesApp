@@ -1,8 +1,20 @@
-import { CircularProgress, Typography, Box } from "@mui/material";
+"use client";
 
-const LoadingScreen = () => {
+import { CircularProgress, Typography, Box, keyframes } from "@mui/material";
+import { styled } from "@mui/system";
+
+const fadeIn = keyframes`
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+`;
+
+const AnimatedBox = styled(Box)({
+  animation: `${fadeIn} 0.4s ease-in-out`,
+});
+
+export default function Loading() {
   return (
-    <Box
+    <AnimatedBox
       sx={{
         display: "flex",
         flexDirection: "column",
@@ -10,10 +22,9 @@ const LoadingScreen = () => {
         justifyContent: "center",
         height: "100vh",
         gap: 2,
-        animation: "fadeIn 0.4s ease-in-out",
         bgcolor: "#f9f9f9",
         zIndex: 50,
-        position: "fixed", // Added to ensure z-index works properly
+        position: "fixed",
         top: 0,
         left: 0,
         right: 0,
@@ -24,17 +35,6 @@ const LoadingScreen = () => {
       <Typography variant="h6" color="textSecondary">
         Please wait, loading...
       </Typography>
-
-      <style>
-        {`
-          @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-          }
-        `}
-      </style>
-    </Box>
+    </AnimatedBox>
   );
-};
-
-export default LoadingScreen;
+}

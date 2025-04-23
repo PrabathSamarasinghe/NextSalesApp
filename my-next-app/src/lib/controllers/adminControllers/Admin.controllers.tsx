@@ -124,7 +124,7 @@ export async function getAdminCount() {
     try {
         await connectDB();
         const adminCount = await Admin.countDocuments();
-        return adminCount === 1 ? {true: true, status: 200} : {false: false, status: 404};
+        return adminCount === 1 ? {value: true, status: 200} : {value: false, status: 404};
     } catch (error) {
         return { 
             status: 500, 
