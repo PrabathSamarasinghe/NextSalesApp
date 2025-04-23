@@ -1,9 +1,10 @@
-import { NextRequest } from "next/server";
 import { getCustomerById } from "@/lib/controllers/customerControllers/Customer.controllers"; // or wherever you import it from
 
-export const GET = async (req: NextRequest, { params }: { params: { customerId: string } }) => {
+export const POST = async (request) => {
   try {
-    const { customerId } = await params;
+    const body = await request.json();
+    const customerId = body.customerId;
+
     if (!customerId) {
       return new Response("Customer ID is required", { status: 400 });
     }

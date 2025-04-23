@@ -31,35 +31,58 @@ export default function CustomerDetails() {
   });
   useEffect(() => {
     const fetchCustomer = async () => {
-      const response = await fetch(`/api/customer/getcustomer/${customer_id}`, {
-        method: 'GET',
-      });
-      if (response.ok) {
+      try {
+        const response = await fetch(`/api/customer/getcustomer`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ customerId: customer_id }),
+        });
+  
+        if (!response.ok) {
+          console.error("Failed to fetch customer data");
+          return;
+        }
+  
         const data = await response.json();
         setCustomer(data);
-        const totalSpent = await fetch(`/api/invoice/other/${customer_id}`, {
-          method: 'GET',
-        });
-        const totalData = await totalSpent.json();
-        setCustomer(prev => ({ ...prev, totalSpent: totalData.totalSpent }));
-      } else {
-        console.error("Failed to fetch customer data");
+  
+        // Fetch total spent
+        const totalResponse = await fetch(`/api/invoice/other/${customer_id}`);
+        if (totalResponse.ok) {
+          const totalData = await totalResponse.json();
+          setCustomer(prev => ({ ...prev, totalSpent: totalData.totalSpent }));
+        } else {
+          console.error("Failed to fetch total spent");
+        }
+  
+      } catch (error) {
+        console.error("Error fetching customer:", error);
       }
     };
+  
     const fetchInvoices = async () => {
+      try {
         const response = await fetch(`/api/invoice/customersInvoices/${customer_id}`);
         if (response.ok) {
-            const data = await response.json();
-            setInvoices(data.invoices);
+          const data = await response.json();
+          setInvoices(data.invoices);
         } else {
-            console.error("Failed to fetch invoices data");
+          console.error("Failed to fetch invoices");
         }
+      } catch (error) {
+        console.error("Error fetching invoices:", error);
+      }
     };
-    
-    fetchInvoices();
-    fetchCustomer();
-  });
-
+  
+    if (customer_id) {
+      fetchCustomer();
+      fetchInvoices();
+    }
+  }, [customer_id]);
+  
+  
   interface InvoiceItem {
     name: string;
     product: string;
