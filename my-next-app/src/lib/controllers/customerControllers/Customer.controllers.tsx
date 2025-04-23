@@ -29,7 +29,13 @@ export const getCustomerById = async (customerId: string) => {
 }
 };
 
-export const createCustomer = async (customerData: any) => {
+export const createCustomer = async (customerData: {
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+  epfNumber: string | null;
+}) => {
   try {
     await connectDB();
     const customer = new Customer(customerData);

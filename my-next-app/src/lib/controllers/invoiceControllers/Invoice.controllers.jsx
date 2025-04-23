@@ -1,16 +1,16 @@
 import Invoice from "@/lib/models/Invoice.model";
 import connectDB from "@/lib/db";
 
-export const createInvoice = async (invoiceData: any) => {
+export const createInvoice = async (invoiceData) => {
   try {
     await connectDB();
     const invoice = new Invoice(invoiceData);
     await invoice.save();
     return { status: 201, menubar: "Invoice created successfully" };
-  } catch (error: unknown) {
+  } catch (error) {
     return { 
         status: 500, 
-         message: error instanceof Error ? error.message : 'An unknown error occurred'
+        message: error.message 
     };
 }
 };
@@ -20,15 +20,15 @@ export const getAllInvoices = async () => {
     await connectDB();
     const invoices = await Invoice.find({}).exec();
     return { status: 200, invoices };
-  } catch (error: unknown) {
+  } catch (error) {
     return { 
         status: 500, 
-         message: error instanceof Error ? error.message : 'An unknown error occurred'
+        message: error.message 
     };
 }
 };
 
-export const deleteInvoice = async (invoiceId: string) => {
+export const deleteInvoice = async (invoiceId) => {
   try {
     await connectDB();
     const result = await Invoice.updateOne(
@@ -39,28 +39,28 @@ export const deleteInvoice = async (invoiceId: string) => {
       return { status: 404, message: "Invoice not found" };
     }
     return { status: 200, message: "Invoice cancelled successfully" };
-  } catch (error: unknown) {
+  } catch (error) {
     return { 
         status: 500, 
-         message: error instanceof Error ? error.message : 'An unknown error occurred'
+        message: error.message 
     };
 }
 };
 
-export const getInvoicesOfCustomer = async (customerId: string) => {
+export const getInvoicesOfCustomer = async (customerId) => {
   try {
     await connectDB();
     const invoices = await Invoice.find({ customer: customerId }).exec();
     return { status: 200, invoices };
-  } catch (error: unknown) {
+  } catch (error) {
     return { 
         status: 500, 
-         message: error instanceof Error ? error.message : 'An unknown error occurred'
+        message: error.message 
     };
 }
 };
 
-export const getAdditionalData = async (customerId: string) => {
+export const getAdditionalData = async (customerId) => {
   try {
     await connectDB();
     const invoices = await Invoice.find({ customer: customerId });
@@ -73,15 +73,15 @@ export const getAdditionalData = async (customerId: string) => {
     );
     const lastPurchaseDate = invoices.sort((a, b) => b.date - a.date)[0].date;
     return { totalSpent, lastPurchaseDate };
-  } catch (error: unknown) {
+  } catch (error) {
     return { 
         status: 500, 
-         message: error instanceof Error ? error.message : 'An unknown error occurred'
+        message: error.message 
     };
 }
 };
 
-export const markAsPaid = async (id: string) => {
+export const markAsPaid = async (id) => {
   try {
     await connectDB();
     const result = await Invoice.updateOne({ _id: id }, { isPaid: true });
@@ -89,10 +89,10 @@ export const markAsPaid = async (id: string) => {
       throw new Error("Invoice not found or already marked as paid");
     }
     return { message: "Invoice marked as paid successfully" };
-  } catch (error: unknown) {
+  } catch (error) {
     return { 
         status: 500, 
-         message: error instanceof Error ? error.message : 'An unknown error occurred'
+        message: error.message 
     };
 }
 };
@@ -115,10 +115,10 @@ export const getNextInvoiceNumber = async () => {
     const lastNumber = parseInt(lastInvoice.invoiceNumber.split("-")[2]);
     const nextNumber = (lastNumber + 1).toString().padStart(4, "0");
     return `INV-${currentYear}-${nextNumber}`;
-  } catch (error: unknown) {
+  } catch (error) {
     return { 
         status: 500, 
-         message: error instanceof Error ? error.message : 'An unknown error occurred'
+        message: error.message 
     };
 }
 };
@@ -128,10 +128,10 @@ export const getRecentInvoices = async () => {
     await connectDB();
     const invoices = await Invoice.find().sort({ date: -1 }).limit(5);
     return invoices;
-  } catch (error: unknown) {
+  } catch (error) {
     return { 
         status: 500, 
-         message: error instanceof Error ? error.message : 'An unknown error occurred'
+        message: error.message 
     };
 }
 };
@@ -190,15 +190,15 @@ export const getTopSellingProducts = async () => {
       },
     ]);
     return invoices;
-  } catch (error: unknown) {
+  } catch (error) {
     return { 
         status: 500, 
-         message: error instanceof Error ? error.message : 'An unknown error occurred'
+        message: error.message 
     };
 }
 };
 
-export const getInvoiceById = async (id : string) => {
+export const getInvoiceById = async (id) => {
   try {
     await connectDB();
     const invoice = await Invoice.findById(id);
@@ -206,20 +206,20 @@ export const getInvoiceById = async (id : string) => {
       throw new Error("Invoice not found");
     }
     return invoice;
-  } catch (error: unknown) {
+  } catch (error) {
     return { 
         status: 500, 
-         message: error instanceof Error ? error.message : 'An unknown error occurred'
+        message: error.message 
     };
 }
 };
-export const getProductSalesReport = async (req: Request & { query: { timeFrame?: string, startDate?: string, endDate?: string } }, res: { status: (arg0: number) => { (): any; new(): any; json: { (arg0: { success: boolean; data?: any[]; summary?: any; dateRange?: { startDate: string | undefined; endDate: string | undefined; }; message?: string; error?: any; }): any; new(): any; }; }; }) => {
+export const getProductSalesReport = async (req, res) => {
   try {
     await connectDB();
     // Parse time frame or date range from request
     const { timeFrame, startDate, endDate } = req.query;
 
-    let dateFilter: { $gte?: string; $lte?: string } = {};
+    let dateFilter = {};
     const today = new Date();
 
     // Set date range based on timeFrame parameter
@@ -366,7 +366,7 @@ export const getProductSalesReport = async (req: Request & { query: { timeFrame?
         endDate: dateFilter.$lte,
       },
     });
-  } catch (error : any) {
+  } catch (error) {
     console.error("Error generating product sales report:", error);
     return res.status(500).json({
       success: false,

@@ -14,7 +14,12 @@ export async function getProducts() {
 }
 };
 
-export async function addProduct(productData: any) {
+export async function addProduct(productData: {
+  name: string;
+  price: number;
+  stock: number;
+  category: string;
+}) {
   try {
     await connectDB();
     const product = new Product(productData);
@@ -41,7 +46,12 @@ export async function deleteProduct(id: string) {
 }
 }
 
-export async function updatedProduct(id: string, productData: any) {
+export async function updatedProduct(id: string, productData: {
+  name: string;
+  price: number;
+  stock: number;
+  category: string;
+}) {
   try {
     await connectDB();
     const product = await Product.findByIdAndUpdate(id, productData, { new: true });

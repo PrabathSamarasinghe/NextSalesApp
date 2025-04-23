@@ -42,13 +42,7 @@ export default function ProductsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const navigate = useRouter();
 
-  const handleUpdateProduct = async (updatedProduct: {
-    _id: string;
-    name: string;
-    price: number;
-    category: string;
-    stock: number;
-  }) => {
+  const handleUpdateProduct = async (updatedProduct) => {
     const response = await fetch(`/api/product/update`, {
       method: "POST",
         headers: {
@@ -69,12 +63,7 @@ export default function ProductsPage() {
     }
   };
 
-  const handleAddProduct = async (newProduct: {
-    name: string;
-    price: number;
-    category: string;
-    stock: number;
-  }) => {
+  const handleAddProduct = async (newProduct) => {
     const response = await fetch("/api/product/add", {
       method: "POST",
         headers: {
@@ -237,13 +226,7 @@ export default function ProductsPage() {
   );
 }
 
-function AddProductModal({
-  onClose,
-  onAdd,
-}: {
-  onClose: () => void;
-  onAdd: (data: { name: string; price: number; category: string; stock: number; }) => void;
-}) {
+function AddProductModal({ onClose, onAdd }) {
   const [formData, setFormData] = useState({
     name: "",
     price: 0,
@@ -251,7 +234,7 @@ function AddProductModal({
     stock: 0,
   });
 
-  const handleChange = (e: { target: { name: any; value: any } }) => {
+  const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({
       ...formData,
@@ -259,7 +242,7 @@ function AddProductModal({
     });
   };
 
-  const handleSubmit = (e: { preventDefault: () => void }) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     // Convert string values to appropriate types
     const processedData = {
@@ -368,21 +351,7 @@ function AddProductModal({
   );
 }
 
-function UpdateProductModal({
-  onClose,
-  onUpdate,
-  product,
-}: {
-  onClose: () => void;
-  onUpdate: (data: any) => void;
-  product: {
-    _id: string;
-    name: string;
-    price: number;
-    category: string;
-    stock: number;
-  };
-}) {
+function UpdateProductModal({ onClose, onUpdate, product }) {
   const [formData, setFormData] = useState({
     name: product.name,
     price: product.price.toString(),
@@ -390,7 +359,7 @@ function UpdateProductModal({
     stock: product.stock.toString(),
   });
 
-  const handleChange = (e: { target: { name: any; value: any } }) => {
+  const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({
       ...formData,
@@ -398,13 +367,13 @@ function UpdateProductModal({
     });
   };
 
-  const handleSubmit = (e: { preventDefault: () => void }) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     const processedData = {
       _id: product._id,
       ...formData,
       price: parseFloat(formData.price),
-      stock: parseInt(formData.stock, 10),
+      stock: parseInt(formData.stock, 10)
     };
     onUpdate(processedData);
   };
