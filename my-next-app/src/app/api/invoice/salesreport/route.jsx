@@ -1,6 +1,6 @@
 import { getProductSalesReport } from "@/lib/controllers/invoiceControllers/Invoice.controllers";
 
-export async function GET(request: Request) {
+export async function GET(request) {
     try {
         const url = new URL(request.url);
         const requestWithQuery = {
@@ -12,12 +12,13 @@ export async function GET(request: Request) {
             }
         };
         const salesReport = await getProductSalesReport(requestWithQuery, {
-            status: function(statusCode: number) {
-                const response = function() {} as any;
-                response.json = function(data: { success: boolean; data?: any[]; summary?: any; dateRange?: { startDate: string | undefined; endDate: string | undefined; }; message?: string; error?: any; }) {
-                    return data;
+            status: function(statusCode) {
+                const response = {
+                    json: function(data) {
+                        return data;
+                    },
+                    status: statusCode,
                 };
-                response.status = statusCode;
                 return response;
             }
         });

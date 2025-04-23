@@ -4,17 +4,9 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 import { ArrowLeft, ChevronDown, TrendingUp, DollarSign, Package } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
-interface ProductSalesData {
-  productId: string;
-  productName: string;
-  totalQuantity: number;
-  totalRevenue: number;
-  totalInvoices: number;
-}
-
 export default function ProductSalesReport() {
   const router = useRouter();
-  const [salesData, setSalesData] = useState<ProductSalesData[]>([]);
+  const [salesData, setSalesData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [timeFrame, setTimeFrame] = useState('thisMonth');
@@ -57,7 +49,7 @@ export default function ProductSalesReport() {
     setLoading(false);
   };
 
-  const formatCurrency = (amount: number) => {
+  const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-LK', {
       style: 'currency',
       currency: 'LKR',
@@ -228,9 +220,9 @@ export default function ProductSalesReport() {
                     >
                       <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                       <XAxis dataKey="productName" tick={{ fontSize: 12 }} />
-                      <YAxis tickFormatter={(value: number) => formatCurrency(value)} tick={{ fontSize: 12 }} />
+                      <YAxis tickFormatter={(value) => formatCurrency(value)} tick={{ fontSize: 12 }} />
                       <Tooltip
-                        formatter={(value: number) => formatCurrency(value)}
+                        formatter={(value) => formatCurrency(value)}
                         contentStyle={{ backgroundColor: '#f9fafb', border: '1px solid #e5e7eb' }}
                       />
                       <Legend />
