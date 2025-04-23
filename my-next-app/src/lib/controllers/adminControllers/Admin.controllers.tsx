@@ -36,8 +36,11 @@ export async function loginAdmin(reqBody: { username: string; password: string; 
         const cookieStore = cookies();
         (await cookieStore).set('NextSalesApp', token, { httpOnly: true });
         return { status: 200, message: "Login successful" };
-    } catch (error) {
-        return { status: 500, message: "Error during login" };
+    } catch (error: any) {
+        return { 
+            status: 500, 
+            message: error.message 
+        };
     }
 }
 
@@ -46,8 +49,11 @@ export async function logoutAdmin() {
         const cookieStore = cookies();
         (await cookieStore).delete('NextSalesApp');
         return { status: 200, message: "Logout successful" };
-    } catch (error) {
-        return { status: 500, message: "Error logging out" };
+    } catch (error: any) {
+        return { 
+            status: 500, 
+            message: error.message 
+        };
     }
 }
 
@@ -112,10 +118,10 @@ export async function getStatistics() {
             totalInvoices,
             totalRevenue
         };
-    } catch (error) {
+    } catch (error: any) {
         return { 
             status: 500, 
-            message: "Error fetching statistics" 
+            message: error.message 
         };
     }
 }
@@ -125,10 +131,10 @@ export async function getAdminCount() {
         await connectDB();
         const adminCount = await Admin.countDocuments();
         return adminCount === 1 ? {value: true, status: 200} : {value: false, status: 404};
-    } catch (error) {
+    } catch (error: any) {
         return { 
             status: 500, 
-            message: "Error fetching admin count" 
+            message: error.message 
         };
     }
 }

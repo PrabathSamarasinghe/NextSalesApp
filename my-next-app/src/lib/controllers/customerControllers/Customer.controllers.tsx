@@ -6,10 +6,12 @@ export const getCustomers = async () => {
     await connectDB();
     const customers = await Customer.find({});
     return customers;
-  } catch (error) {
-    console.error("Error fetching customers:", error);
-    throw new Error("Failed to fetch customers");
-  }
+  } catch (error: any) {
+    return { 
+        status: 500, 
+        message: error.message 
+    };
+}
 };
 
 export const getCustomerById = async (customerId: string) => {
@@ -19,10 +21,12 @@ export const getCustomerById = async (customerId: string) => {
 
     
     return customer;
-  } catch (error) {
-    console.error("Error fetching customer by ID:", error);
-    throw new Error("Failed to fetch customer");
-  }
+  } catch (error: any) {
+    return { 
+        status: 500, 
+        message: error.message 
+    };
+}
 };
 
 export const createCustomer = async (customerData: any) => {
@@ -31,9 +35,11 @@ export const createCustomer = async (customerData: any) => {
     const customer = new Customer(customerData);
     await customer.save();
     return customer;
-  } catch (error) {
-    console.error("Error creating customer:", error);
-    throw new Error("Failed to create customer");
-  }
+  } catch (error: any) {
+    return { 
+        status: 500, 
+        message: error.message 
+    };
+}
 };
     

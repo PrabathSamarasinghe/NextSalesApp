@@ -6,10 +6,12 @@ export async function getProducts() {
     await connectDB();
     const products = await Product.find({});
     return products;
-  } catch (error) {
-    console.error("Error fetching products:", error);
-    throw new Error("Failed to fetch products");
-  }
+  } catch (error: any) {
+    return { 
+        status: 500, 
+        message: error.message 
+    };
+}
 };
 
 export async function addProduct(productData: any) {
@@ -18,10 +20,12 @@ export async function addProduct(productData: any) {
     const product = new Product(productData);
     await product.save();
     return product;
-  } catch (error) {
-    console.error("Error creating product:", error);
-    throw new Error("Failed to create product");
-  }
+  } catch (error: any) {
+    return { 
+        status: 500, 
+        message: error.message 
+    };
+}
 }
 
 export async function deleteProduct(id: string) {
@@ -29,10 +33,12 @@ export async function deleteProduct(id: string) {
     await connectDB();
     const product = await Product.findByIdAndDelete(id);
     return product;
-  } catch (error) {
-    console.error("Error deleting product:", error);
-    throw new Error("Failed to delete product");
-  }
+  } catch (error: any) {
+    return { 
+        status: 500, 
+        message: error.message 
+    };
+}
 }
 
 export async function updatedProduct(id: string, productData: any) {
@@ -40,8 +46,10 @@ export async function updatedProduct(id: string, productData: any) {
     await connectDB();
     const product = await Product.findByIdAndUpdate(id, productData, { new: true });
     return product;
-  } catch (error) {
-    console.error("Error updating product:", error);
-    throw new Error("Failed to update product");
-  }
+  } catch (error: any) {
+    return { 
+        status: 500, 
+        message: error.message 
+    };
+}
 }
