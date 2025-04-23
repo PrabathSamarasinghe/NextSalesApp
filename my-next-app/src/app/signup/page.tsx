@@ -32,7 +32,7 @@ const SignupPage = () => {
             }, 2000);
         };
         checkAdmin();
-    }, []);
+    }, [router]);
 
     const handleChange = (e : { target: { name: string; value: string; }; }) => {
         const { name, value } = e.target;

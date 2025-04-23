@@ -36,10 +36,10 @@ export async function loginAdmin(reqBody: { username: string; password: string; 
         const cookieStore = cookies();
         (await cookieStore).set('NextSalesApp', token, { httpOnly: true });
         return { status: 200, message: "Login successful" };
-    } catch (error: any) {
+    } catch (error: unknown) {
         return { 
             status: 500, 
-            message: error.message 
+            message: error instanceof Error ? error.message : 'An unknown error occurred'
         };
     }
 }
@@ -49,10 +49,10 @@ export async function logoutAdmin() {
         const cookieStore = cookies();
         (await cookieStore).delete('NextSalesApp');
         return { status: 200, message: "Logout successful" };
-    } catch (error: any) {
+    } catch (error: unknown) {
         return { 
             status: 500, 
-            message: error.message 
+             message: error instanceof Error ? error.message : 'An unknown error occurred'
         };
     }
 }
@@ -93,10 +93,10 @@ export async function registerAdmin(reqBody: { firstName: string; lastName: stri
             status: 201, 
             message: "Admin registered successfully" 
         };
-    } catch (error: any) {
+    } catch (error: unknown) {
         return { 
             status: 500, 
-            message: error.message 
+             message: error instanceof Error ? error.message : 'An unknown error occurred'
         };
     }
 }
@@ -118,10 +118,10 @@ export async function getStatistics() {
             totalInvoices,
             totalRevenue
         };
-    } catch (error: any) {
+    } catch (error: unknown) {
         return { 
             status: 500, 
-            message: error.message 
+             message: error instanceof Error ? error.message : 'An unknown error occurred'
         };
     }
 }
@@ -131,10 +131,10 @@ export async function getAdminCount() {
         await connectDB();
         const adminCount = await Admin.countDocuments();
         return adminCount === 1 ? {value: true, status: 200} : {value: false, status: 404};
-    } catch (error: any) {
+    } catch (error: unknown) {
         return { 
             status: 500, 
-            message: error.message 
+             message: error instanceof Error ? error.message : 'An unknown error occurred'
         };
     }
 }

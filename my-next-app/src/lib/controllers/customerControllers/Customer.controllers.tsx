@@ -6,10 +6,10 @@ export const getCustomers = async () => {
     await connectDB();
     const customers = await Customer.find({});
     return customers;
-  } catch (error: any) {
+  } catch (error: unknown) {
     return { 
         status: 500, 
-        message: error.message 
+         message: error instanceof Error ? error.message : 'An unknown error occurred'
     };
 }
 };
@@ -21,10 +21,10 @@ export const getCustomerById = async (customerId: string) => {
 
     
     return customer;
-  } catch (error: any) {
+  } catch (error: unknown) {
     return { 
         status: 500, 
-        message: error.message 
+         message: error instanceof Error ? error.message : 'An unknown error occurred'
     };
 }
 };
@@ -35,10 +35,10 @@ export const createCustomer = async (customerData: any) => {
     const customer = new Customer(customerData);
     await customer.save();
     return customer;
-  } catch (error: any) {
+  } catch (error: unknown) {
     return { 
         status: 500, 
-        message: error.message 
+         message: error instanceof Error ? error.message : 'An unknown error occurred'
     };
 }
 };

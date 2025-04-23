@@ -1,6 +1,6 @@
 import { getNextInvoiceNumber } from "@/lib/controllers/invoiceControllers/Invoice.controllers";
 
-export async function GET(request: Request) {
+export async function GET() {
   try {
     const nextInvoiceNumber = await getNextInvoiceNumber();
     return new Response(JSON.stringify(nextInvoiceNumber), {
