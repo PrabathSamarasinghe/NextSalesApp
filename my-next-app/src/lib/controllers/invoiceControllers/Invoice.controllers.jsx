@@ -1,18 +1,27 @@
 import Invoice from "@/lib/models/Invoice.model";
 import connectDB from "@/lib/db";
+import Product from "@/lib/models/Product.model";
 
 export const createInvoice = async (invoiceData) => {
   try {
     await connectDB();
+    await Promise.all(
+      invoiceData.items.map(async (item) => {
+        await Product.findByIdAndUpdate(
+          item.product,
+          { $inc: { stock: -item.quantity } }
+        );
+      })
+    );
     const invoice = new Invoice(invoiceData);
     await invoice.save();
-    return { status: 201, menubar: "Invoice created successfully" };
+    return { status: 201, message: "Invoice created successfully" };
   } catch (error) {
-    return { 
-        status: 500, 
-        message: error.message 
+    return {
+      status: 500,
+      message: error.message,
     };
-}
+  }
 };
 
 export const getAllInvoices = async () => {
@@ -21,11 +30,11 @@ export const getAllInvoices = async () => {
     const invoices = await Invoice.find({}).exec();
     return { status: 200, invoices };
   } catch (error) {
-    return { 
-        status: 500, 
-        message: error.message 
+    return {
+      status: 500,
+      message: error.message,
     };
-}
+  }
 };
 
 export const deleteInvoice = async (invoiceId) => {
@@ -40,11 +49,11 @@ export const deleteInvoice = async (invoiceId) => {
     }
     return { status: 200, message: "Invoice cancelled successfully" };
   } catch (error) {
-    return { 
-        status: 500, 
-        message: error.message 
+    return {
+      status: 500,
+      message: error.message,
     };
-}
+  }
 };
 
 export const getInvoicesOfCustomer = async (customerId) => {
@@ -53,11 +62,11 @@ export const getInvoicesOfCustomer = async (customerId) => {
     const invoices = await Invoice.find({ customer: customerId }).exec();
     return { status: 200, invoices };
   } catch (error) {
-    return { 
-        status: 500, 
-        message: error.message 
+    return {
+      status: 500,
+      message: error.message,
     };
-}
+  }
 };
 
 export const getAdditionalData = async (customerId) => {
@@ -74,11 +83,11 @@ export const getAdditionalData = async (customerId) => {
     const lastPurchaseDate = invoices.sort((a, b) => b.date - a.date)[0].date;
     return { totalSpent, lastPurchaseDate };
   } catch (error) {
-    return { 
-        status: 500, 
-        message: error.message 
+    return {
+      status: 500,
+      message: error.message,
     };
-}
+  }
 };
 
 export const markAsPaid = async (id) => {
@@ -90,37 +99,36 @@ export const markAsPaid = async (id) => {
     }
     return { message: "Invoice marked as paid successfully" };
   } catch (error) {
-    return { 
-        status: 500, 
-        message: error.message 
+    return {
+      status: 500,
+      message: error.message,
     };
-}
+  }
 };
 
 export const getNextInvoiceNumber = async () => {
   try {
     await connectDB();
-    const currentYear = new Date().getFullYear();
 
     const lastInvoice = await Invoice.findOne({
-      invoiceNumber: new RegExp(`INV-${currentYear}-`),
+      invoiceNumber: new RegExp(`INV-`),
     })
       .sort({ invoiceNumber: -1 })
       .limit(1);
 
     if (!lastInvoice) {
-      return `INV-${currentYear}-0001`; // First invoice of the year
+      return `INV-25201`; // First invoice of the year
     }
 
-    const lastNumber = parseInt(lastInvoice.invoiceNumber.split("-")[2]);
-    const nextNumber = (lastNumber + 1).toString().padStart(4, "0");
-    return `INV-${currentYear}-${nextNumber}`;
+    const lastNumber = parseInt(lastInvoice.invoiceNumber.split("-")[1]);
+    const nextNumber = (lastNumber + 1).toString().padStart(5, "0");
+    return `INV-${nextNumber}`;
   } catch (error) {
-    return { 
-        status: 500, 
-        message: error.message 
+    return {
+      status: 500,
+      message: error.message,
     };
-}
+  }
 };
 
 export const getRecentInvoices = async () => {
@@ -129,11 +137,11 @@ export const getRecentInvoices = async () => {
     const invoices = await Invoice.find().sort({ date: -1 }).limit(5);
     return invoices;
   } catch (error) {
-    return { 
-        status: 500, 
-        message: error.message 
+    return {
+      status: 500,
+      message: error.message,
     };
-}
+  }
 };
 
 export const getTopSellingProducts = async () => {
@@ -191,11 +199,11 @@ export const getTopSellingProducts = async () => {
     ]);
     return invoices;
   } catch (error) {
-    return { 
-        status: 500, 
-        message: error.message 
+    return {
+      status: 500,
+      message: error.message,
     };
-}
+  }
 };
 
 export const getInvoiceById = async (id) => {
@@ -207,11 +215,11 @@ export const getInvoiceById = async (id) => {
     }
     return invoice;
   } catch (error) {
-    return { 
-        status: 500, 
-        message: error.message 
+    return {
+      status: 500,
+      message: error.message,
     };
-}
+  }
 };
 export const getProductSalesReport = async (req, res) => {
   try {

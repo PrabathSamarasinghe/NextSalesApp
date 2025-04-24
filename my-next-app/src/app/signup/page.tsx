@@ -15,7 +15,6 @@ const SignupPage = () => {
     });
     const [authError, setAuthError] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
-    const [isOneAdmin, setIsOneAdmin] = useState(false);
     useEffect(() => {
         const checkAdmin = async () => {
             const res = await fetch('/api/admin/count', {
@@ -25,11 +24,13 @@ const SignupPage = () => {
                 }
             });
             const data = await res.json();
-            setIsOneAdmin(data.value);
-            setAuthError('Admin exists. Please login to continue.');
-            setTimeout(() => {
-                router.push('/');
-            }, 2000);
+
+            if (!data.value) {
+                setAuthError('Admin exists. Please login to continue.');
+                setTimeout(() => {
+                    router.push('/');
+                }, 2000);
+            }
         };
         checkAdmin();
     }, [router]);
@@ -274,7 +275,7 @@ const SignupPage = () => {
                     <button 
                         type="submit" 
                         className="w-full bg-blue-600 text-white py-2.5 px-4 rounded-md font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm" 
-                        disabled={!has8Chars || !hasLowercase || !hasUppercase || !hasSpecialChar || !passwordMatch || !validEmail || isOneAdmin}
+                        disabled={!has8Chars || !hasLowercase || !hasUppercase || !hasSpecialChar || !passwordMatch || !validEmail }
                     >
                         Create Account
                     </button>

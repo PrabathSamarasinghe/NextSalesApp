@@ -134,8 +134,7 @@ useEffect(() => {
     });
 
     const subtotal = updatedItems.reduce((sum, item) => sum + item.total, 0);
-    const tax = subtotal * 0.1; // 10% tax rate
-    const total = subtotal + tax;
+    const total = subtotal
 
     setInvoice({
       ...invoice,
@@ -177,7 +176,7 @@ useEffect(() => {
   const formatCurrency = (amount: number): string => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency: "USD",
+      currency: "LKR",
     }).format(amount);
   };
 
@@ -228,8 +227,6 @@ useEffect(() => {
       alert("Please select products for all invoice items");
       return;
     } 
-
-    console.log("Invoice data to be saved:", invoice);
     
     try {
       const response = await fetch("/api/invoice/create", {
@@ -438,18 +435,22 @@ useEffect(() => {
                         </td>
                         <td className="px-4 py-3">
                           <input
-                            type="number"
-                            min="1"
-                            className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            value={item.quantity}
-                            onChange={(e) =>
-                              updateItemField(
-                                item.id,
-                                "",
-                                "quantity",
-                                parseInt(e.target.value)
-                              )
-                            }
+                          type="number"
+                          min="1"
+                          className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          value={item.quantity}
+                          onChange={(e) => {
+                            const selectedProduct = products.find(p => p._id === item.product);
+                            const maxStock = selectedProduct?.stock || 1;
+                            const value = Math.min(parseInt(e.target.value), maxStock);
+                            updateItemField(
+                            item.id,
+                            "",
+                            "quantity",
+                            value
+                            );
+                          }}
+                          max={products.find(p => p._id === item.product)?.stock || 1}
                           />
                         </td>
                         <td className="px-4 py-3">
@@ -465,10 +466,10 @@ useEffect(() => {
                         </td>
                         <td className="px-4 py-3">
                           <input
-                            type="text"
-                            className="w-full p-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700 font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            value={formatCurrency(item.total)}
-                            readOnly
+                          type="text"
+                          className="w-full p-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700 font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          value={isNaN(item.total) ? formatCurrency(0) : formatCurrency(item.total)}
+                          readOnly
                           />
                         </td>
                         <td className="px-4 py-3 text-right">
