@@ -167,8 +167,9 @@ export default function InvoicesList() {
 
   const handleViewInvoice = async (invoiceId: string) => {
     try {
-      const response = await fetch(`/api/invoice/getinvoice/${invoiceId}`, {
-        method: "GET",
+      const response = await fetch(`/api/invoice/getinvoice`, {
+        method: "POST",
+        body: JSON.stringify({ invoiceId }),
         headers: {
           "Content-Type": "application/json",
         },
@@ -442,28 +443,67 @@ export default function InvoicesList() {
                 ×
               </button>
             </div>
-            <div className="grid grid-cols-2 gap-6 mb-6">
-              <div className="p-4 bg-gray-50 rounded-lg shadow-sm">
-                <p className="font-semibold text-gray-700 mb-1">
-                  Invoice Number:
-                </p>
-                <p className="text-gray-900">{selectedInvoice.invoiceNumber}</p>
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <div className="p-4 bg-gray-50 rounded-lg shadow-sm border border-gray-200">
+              <p className="font-semibold text-gray-700 mb-2">
+                Invoice Number:
+              </p>
+              <p className="text-gray-900 text-lg">{selectedInvoice.invoiceNumber}</p>
               </div>
-              <div className="p-4 bg-gray-50 rounded-lg shadow-sm text-end">
-                <p className="font-semibold text-gray-700 mb-1">Date:</p>
-                <p className="text-gray-900">
-                  {new Date(selectedInvoice.date).toLocaleDateString()}
-                </p>
+              <div className="p-4 bg-gray-50 rounded-lg shadow-sm border border-gray-200">
+              <p className="font-semibold text-gray-700 mb-2 text-right">
+                Date:
+              </p>
+              <p className="text-gray-900 text-lg text-right">
+                {new Date(selectedInvoice.date).toLocaleDateString()}
+              </p>
               </div>
-              <div className="p-4 bg-gray-50 rounded-lg shadow-sm">
-                <p className="font-semibold text-gray-700 mb-1">Customer:</p>
-                <p className="text-gray-900">
-                  {selectedInvoice.customerDetails.name}
-                </p>
+              <div className="p-4 bg-gray-50 rounded-lg shadow-sm border border-gray-200">
+              <p className="font-semibold text-gray-700 mb-2">
+                Customer:
+              </p>
+              <p className="text-gray-900 text-lg">
+                {selectedInvoice.customerDetails.name}
+              </p>
               </div>
-              <div className="p-4 bg-gray-50 rounded-lg shadow-sm">
-                <p className="font-semibold text-gray-700 mb-1">Status:</p>
+              <div className="p-4 bg-gray-50 rounded-lg shadow-sm border border-gray-200 flex flex-col">
+              <p className="font-semibold text-gray-700 mb-2">
+                Status:
+              </p>
+              <div className="flex items-center justify-between">
                 <StatusBadge isPaid={selectedInvoice.isPaid} />
+                {!selectedInvoice.isPaid && (
+                <button 
+                  className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors duration-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                  onClick={async () => {
+                  try {
+                    await fetch(`/api/invoice/paid`, {
+                    method: "POST",
+                    body: JSON.stringify({ invoiceId: selectedInvoice._id }),
+                    headers: {
+                      "Content-Type": "application/json",
+                    },
+                    });
+                    setInvoicesStructure((prev) =>
+                    prev.map((invoice) =>
+                      invoice._id === selectedInvoice._id
+                      ? { ...invoice, isPaid: true }
+                      : invoice
+                    )
+                    );
+                    setSelectedInvoice((prev) => ({
+                    ...prev!,
+                    isPaid: true,
+                    }));
+                  } catch (error) {
+                    console.error("Error marking invoice as paid:", error);
+                  }
+                  }}
+                >
+                  Mark as Paid
+                </button>
+                )}
+              </div>
               </div>
             </div>
             {selectedInvoice.isCancelled && (

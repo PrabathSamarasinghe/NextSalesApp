@@ -1,12 +1,11 @@
 import { getInvoiceById } from "@/lib/controllers/invoiceControllers/Invoice.controllers";
-import { NextRequest } from "next/server";
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { invoiceId: string } }
+
+export async function POST(
+  request: Request,
 ) {
   try {
-    const { invoiceId } = params;
+    const { invoiceId } = await request.json();
     if (!invoiceId) {
       return new Response("Invoice ID is required", { status: 400 });
     }
