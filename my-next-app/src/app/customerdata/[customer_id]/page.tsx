@@ -49,7 +49,14 @@ export default function CustomerDetails() {
         setCustomer(data);
   
         // Fetch total spent
-        const totalResponse = await fetch(`/api/invoice/other/${customer_id}`);
+        const totalResponse = await fetch(`/api/invoice/other/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ customerId: customer_id }),
+        }
+        );
         if (totalResponse.ok) {
           const totalData = await totalResponse.json();
           setCustomer(prev => ({ ...prev, totalSpent: totalData.totalSpent }));
@@ -64,7 +71,13 @@ export default function CustomerDetails() {
   
     const fetchInvoices = async () => {
       try {
-        const response = await fetch(`/api/invoice/customersInvoices/${customer_id}`);
+        const response = await fetch(`/api/invoice/customersInvoices`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ customerId: customer_id }),
+        });
         if (response.ok) {
           const data = await response.json();
           setInvoices(data.invoices);

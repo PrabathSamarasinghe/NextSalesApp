@@ -42,7 +42,13 @@ export default function CustomerList() {
             const totals = await Promise.all(
                 data.map(async (customer: Customer) => {
                     try {
-                        const response = await fetch(`/api/invoice/other/${customer._id}`);
+                        const response = await fetch(`/api/invoice/other/`,{
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({ customerId: customer._id }),
+                        });
                         const data = await response.json();
                         return { ...customer, totalSpent: data.totalSpent, lastPurchase: data.lastPurchaseDate };
                     } catch (err) {
