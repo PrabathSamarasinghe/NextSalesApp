@@ -11,18 +11,15 @@ const customerSchema = new mongoose.Schema({
     },
     phone: {
         type: String,
-        unique: true,
         default: null,
         sparse: true,
     },
     email: {
         type: String,
-        unique: true,
         default: null,
     },
     epfNumber: {
         type: String,
-        unique: true,
         default: null,
         sparse: true,
     },

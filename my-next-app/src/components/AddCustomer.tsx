@@ -3,8 +3,8 @@ import { X } from "lucide-react";
 
 interface CustomerDetails {
   name: string;
-  email: string;
-  phone: string;
+  email: string | null;
+  phone: string | null;
   address: string;
   epfNumber: string | null;
 }
@@ -18,14 +18,16 @@ const AddCustomer = ({setIsModalOpen}: AddCustomerProps) => {
 
   const [newCustomer, setNewCustomer] = useState<CustomerDetails>({
     name: "",
-    email: "default@example.com",
-    phone: "123-456-7890",
+    email: null,
+    phone: null,
     address: "Sri Lanka",
     epfNumber: null,
   });
 
   const handleAddCustomer = async (e: React.FormEvent) => {
     e.preventDefault();    
+    console.log("New Customer Data:", newCustomer);
+    
     try {
       await fetch("/api/customer/create", {
         method: "POST",
@@ -90,7 +92,7 @@ const AddCustomer = ({setIsModalOpen}: AddCustomerProps) => {
         <input
           type="email"
           name="email"
-          value={newCustomer.email}
+          value={newCustomer.email || ""}
           onChange={handleInputChange}
           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
@@ -103,7 +105,7 @@ const AddCustomer = ({setIsModalOpen}: AddCustomerProps) => {
         <input
           type="tel"
           name="phone"
-          value={newCustomer.phone}
+          value={newCustomer.phone || ""}
           onChange={handleInputChange}
           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
