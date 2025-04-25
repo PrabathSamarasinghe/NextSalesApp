@@ -44,6 +44,7 @@ interface Product {
 }
 
 export default function InvoiceEntry(): JSX.Element {
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
 useEffect(() => {
     const fetchCustomers = async () => {
@@ -66,11 +67,19 @@ useEffect(() => {
         invoiceNumber: data,
       }));
     };
+    if (!isModalOpen) {
+      const refreshCustomers = async () => {
+        const response = await fetch("/api/customer/all");
+        const data = await response.json();
+        setCustomers(data);
+      };
+      refreshCustomers();
+    }
 
     fetchNewInvoiceNumber();
     fetchProducts();
     fetchCustomers();
-}, []);
+}, [isModalOpen]);
 
   const router = useRouter();
   const [invoice, setInvoice] = useState<InvoiceData>({
@@ -102,7 +111,6 @@ useEffect(() => {
     },
   ]);
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
 
   const updateItemField = (
