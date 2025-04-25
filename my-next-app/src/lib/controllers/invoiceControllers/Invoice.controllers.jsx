@@ -190,6 +190,7 @@ export const getTopSellingProducts = async () => {
           _id: 0,
           productId: "$_id",
           productName: 1,
+          category: { $arrayElemAt: ["$productDetails.category", 0] },
           totalQuantity: 1,
           totalRevenue: 1,
           // Include any additional fields from productDetails if needed
@@ -338,15 +339,25 @@ export const getProductSalesReport = async (req, res) => {
         },
       },
 
+      // Lookup product details
+      {
+        $lookup: {
+          from: "products",
+          localField: "_id",
+          foreignField: "_id",
+          as: "productDetails"
+        }
+      },
       // Post-processing to count invoices
       {
         $project: {
           _id: 0,
           productId: "$_id",
           productName: 1,
+          category: { $arrayElemAt: ["$productDetails.category", 0] },
           totalQuantity: 1,
           totalRevenue: 1,
-          totalInvoices: { $size: "$totalInvoices" }, // Count unique invoices
+          totalInvoices: { $size: "$totalInvoices" } // Count unique invoices
         },
       },
 

@@ -51,6 +51,7 @@ export default function Dashboard() {
     name: string;
     sales: string;
     quantity: number;
+    category: string;
   }
   const [recentInvoices, setRecentInvoices] = useState<Invoice[]>([]);
 
@@ -130,10 +131,11 @@ export default function Dashboard() {
       try {
         const response = await fetch("/api/invoice/topselling");
         const data = await response.json();
-        const products = data.map((product: { id: string; productName: string; totalRevenue: number; totalQuantity: number; }) => ({
+        const products = data.map((product: { id: string; productName: string; category: string; totalRevenue: number; totalQuantity: number; }) => ({
           name: product.productName,
           sales: `Rs.${product.totalRevenue.toFixed(2)}`,
           quantity: product.totalQuantity,
+          category: product.category,
         }));
         setTopProducts(products);
       } catch (error) {
@@ -392,6 +394,9 @@ export default function Dashboard() {
                       <div>
                         <p className="text-sm font-medium text-gray-900">
                           {product.name}
+                            <span className="text-xs text-gray-500 ml-2">
+                            {product.category}
+                            </span>
                         </p>
                         <p className="text-xs text-gray-500 mt-1">
                           {product.quantity} units sold
