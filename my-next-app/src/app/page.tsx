@@ -37,7 +37,7 @@ const LoginPage = () => {
             setAuthError('');
             setTimeout(() => {
                 router.push('/dashboard');
-            }, 2000);
+            }, 500);
         } else {
             setAuthError(data.message);
             setSuccessMessage('');
