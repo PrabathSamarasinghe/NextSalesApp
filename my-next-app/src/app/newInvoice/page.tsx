@@ -1,11 +1,8 @@
 "use client";
 import { JSX, useState, useEffect } from "react";
 import { Save, Plus, Trash2, ArrowLeft, Check, X } from "lucide-react";
-// import { useNavigate } from "react-router-dom";
 import { useRouter } from "next/navigation";
 import AddCustomer from "@/components/AddCustomer";
-
-
 
 // Define TypeScript interfaces
 interface CustomerDetails {
@@ -43,6 +40,7 @@ interface Product {
   name: string;
   price: number;
   stock: number;
+  category?: string; // Added category field
 }
 
 export default function InvoiceEntry(): JSX.Element {
@@ -428,7 +426,7 @@ useEffect(() => {
                             <option value="">Select a product</option>
                             {products.map((product, index) => (
                               product.stock > 0 && <option key={index} value={product._id}>
-                                {product.name}
+                                {product.name} {product.category ? `(${product.category})` : ''}
                               </option>
                             ))}
                           </select>
@@ -455,14 +453,23 @@ useEffect(() => {
                         </td>
                         <td className="px-4 py-3">
                           <input
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            className="w-full p-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            value={item.price}
-                            disabled={true}
-                            readOnly
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          value={item.price}
+                          onChange={(e) => updateItemField(
+                            item.id,
+                            "",
+                            "price",
+                            parseFloat(e.target.value) || 0
+                          )}
                           />
+                          {item.product && (
+                            <p className="absolute text-[50%] text-gray-500">
+                              Suggested price: {formatCurrency(products.find(p => p._id === item.product)?.price || 0)}
+                            </p>
+                          )}
                         </td>
                         <td className="px-4 py-3">
                           <input

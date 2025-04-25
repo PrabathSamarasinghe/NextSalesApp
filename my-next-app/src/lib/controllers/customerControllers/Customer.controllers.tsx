@@ -31,9 +31,9 @@ export const getCustomerById = async (customerId: string) => {
 
 export const createCustomer = async (customerData: {
   name: string;
-  email: string;
-  phone: string;
-  address: string;
+  email: string | null;
+  phone: string | null;
+  address: string | null;
   epfNumber: string | null;
 }) => {
   try {

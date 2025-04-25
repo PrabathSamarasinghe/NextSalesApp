@@ -45,38 +45,38 @@ export default function ProductsPage() {
   const handleUpdateProduct = async (updatedProduct) => {
     const response = await fetch(`/api/product/update`, {
       method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ id: updatedProduct._id, ...updatedProduct }),
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ id: updatedProduct._id, ...updatedProduct }),
     });
     const data = await response.json();
     if (response.ok) {
-        setProducts((prevProducts) =>
-            prevProducts.map((product) =>
-            product._id === updatedProduct._id ? updatedProduct : product
-            )
-        );
-        setIsUpdateModalOpen(false);
+      setProducts((prevProducts) =>
+        prevProducts.map((product) =>
+          product._id === updatedProduct._id ? updatedProduct : product
+        )
+      );
+      setIsUpdateModalOpen(false);
     } else {
-        console.error("Error updating product:", data.message);
+      console.error("Error updating product:", data.message);
     }
   };
 
   const handleAddProduct = async (newProduct) => {
     const response = await fetch("/api/product/add", {
       method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify(newProduct),
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(newProduct),
     });
     const data = await response.json();
     if (response.ok) {
-        setProducts((prevProducts) => [...prevProducts, data]);
-        setIsModalOpen(false);
+      setProducts((prevProducts) => [...prevProducts, data]);
+      setIsModalOpen(false);
     } else {
-        console.error("Error adding product:", data.message);
+      console.error("Error adding product:", data.message);
     }
   };
 
@@ -126,20 +126,23 @@ export default function ProductsPage() {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
+          <table className="min-w-full divide-y divide-gray-200 text-center">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Product Name
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Category
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Price
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Stock
+                </th>
+                <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Stock Validation
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Actions
@@ -161,12 +164,18 @@ export default function ProductsPage() {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {product.stock}
                   </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {product.stock > 0 ? 
+                      product.stock * product.price : "Out of Stock"
+                      }
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <button className="text-blue-600 hover:text-blue-900 mr-3"
-                    onClick={() => {
-                      setIsUpdateModalOpen(true);
-                      setProductToUpdate(product);
-                    }}
+                    <button
+                      className="text-blue-600 hover:text-blue-900 mr-3"
+                      onClick={() => {
+                        setIsUpdateModalOpen(true);
+                        setProductToUpdate(product);
+                      }}
                     >
                       <Edit size={18} />
                     </button>
@@ -175,20 +184,28 @@ export default function ProductsPage() {
                       onClick={async () => {
                         await fetch(`/api/product/delete`, {
                           method: "DELETE",
-                            headers: {
-                                "Content-Type": "application/json",
-                            },
-                            body: JSON.stringify({ id: product._id }),
-                        }).then(res => {
-                          if (res.ok) {
-
-                            setProducts(prevProducts => prevProducts.filter(p => p._id !== product._id));
-                          } else {
-                            console.error("Error deleting product:", res.statusText);
-                          }
-                        }).catch(error => {
-                          console.error("Error deleting product:", error);
-                        });
+                          headers: {
+                            "Content-Type": "application/json",
+                          },
+                          body: JSON.stringify({ id: product._id }),
+                        })
+                          .then((res) => {
+                            if (res.ok) {
+                              setProducts((prevProducts) =>
+                                prevProducts.filter(
+                                  (p) => p._id !== product._id
+                                )
+                              );
+                            } else {
+                              console.error(
+                                "Error deleting product:",
+                                res.statusText
+                              );
+                            }
+                          })
+                          .catch((error) => {
+                            console.error("Error deleting product:", error);
+                          });
                       }}
                     >
                       <Trash2 size={18} />
@@ -219,7 +236,7 @@ export default function ProductsPage() {
         <UpdateProductModal
           onClose={() => setIsUpdateModalOpen(false)}
           onUpdate={handleUpdateProduct}
-          product={producttoUpdate} 
+          product={producttoUpdate}
         />
       )}
     </div>
@@ -238,7 +255,12 @@ function AddProductModal({ onClose, onAdd }) {
     const { name, value } = e.target;
     setFormData({
       ...formData,
-      [name]: name === "price" ? parseFloat(value) : name === "stock" ? parseInt(value, 10) : value,
+      [name]:
+        name === "price"
+          ? parseFloat(value)
+          : name === "stock"
+          ? parseInt(value, 10)
+          : value,
     });
   };
 
@@ -373,13 +395,13 @@ function UpdateProductModal({ onClose, onUpdate, product }) {
       _id: product._id,
       ...formData,
       price: parseFloat(formData.price),
-      stock: parseInt(formData.stock, 10)
+      stock: parseInt(formData.stock, 10),
     };
     onUpdate(processedData);
   };
 
   return (
-      <div className="fixed inset-0 bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6 max-h-screen overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold text-gray-800">Update Product</h2>
@@ -454,19 +476,19 @@ function UpdateProductModal({ onClose, onUpdate, product }) {
           </div>
 
           <div className="flex justify-end space-x-3">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-          >
-            Update Product
-          </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            >
+              Update Product
+            </button>
           </div>
         </form>
       </div>

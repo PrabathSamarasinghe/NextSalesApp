@@ -18,9 +18,9 @@ const AddCustomer = ({setIsModalOpen}: AddCustomerProps) => {
 
   const [newCustomer, setNewCustomer] = useState<CustomerDetails>({
     name: "",
-    email: "",
-    phone: "",
-    address: "",
+    email: "default@example.com",
+    phone: "123-456-7890",
+    address: "Sri Lanka",
     epfNumber: null,
   });
 
@@ -41,14 +41,6 @@ const AddCustomer = ({setIsModalOpen}: AddCustomerProps) => {
         address: "",
         epfNumber: null,
       });
-      setNewCustomer({
-        name: "",
-        email: "",
-        phone: "",
-        address: "",
-        epfNumber: "",
-      });
-    
       setIsModalOpen(false);
     } catch (error) {
       console.error("Error adding customer:", error);
@@ -93,7 +85,7 @@ const AddCustomer = ({setIsModalOpen}: AddCustomerProps) => {
 
         <div className="mb-4">
         <label className="block text-sm font-medium text-gray-700 mb-1">
-          Email Address*
+          Email Address
         </label>
         <input
           type="email"
@@ -101,13 +93,12 @@ const AddCustomer = ({setIsModalOpen}: AddCustomerProps) => {
           value={newCustomer.email}
           onChange={handleInputChange}
           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          required
         />
         </div>
 
         <div className="mb-4">
         <label className="block text-sm font-medium text-gray-700 mb-1">
-          Phone Number*
+          Phone Number
         </label>
         <input
           type="tel"
@@ -115,7 +106,6 @@ const AddCustomer = ({setIsModalOpen}: AddCustomerProps) => {
           value={newCustomer.phone}
           onChange={handleInputChange}
           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          required
         />
         </div>
         <div className="mb-4">

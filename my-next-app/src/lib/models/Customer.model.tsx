@@ -7,17 +7,16 @@ const customerSchema = new mongoose.Schema({
     },
     address: {
         type: String,
-        required: true,
         default: null,
     },
     phone: {
         type: String,
-        required: true,
         unique: true,
+        default: null,
+        sparse: true,
     },
     email: {
         type: String,
-        required: true,
         unique: true,
         default: null,
     },
