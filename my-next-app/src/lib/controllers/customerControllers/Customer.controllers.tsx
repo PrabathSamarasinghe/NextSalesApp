@@ -49,3 +49,33 @@ export const createCustomer = async (customerData: {
 }
 };
     
+export const updateCustomer = async (customerId: string, customerData: {
+  name?: string;
+  email?: string | null;
+  phone?: string | null;
+  address?: string | null;
+  epfNumber?: string | null;
+}) => {
+  try {
+    await connectDB();
+    const customer = await Customer.findByIdAndUpdate(customerId, customerData, { new: true });
+    return customer;
+  } catch (error: unknown) {
+    return { 
+        status: 500, 
+         message: error instanceof Error ? error.message : 'An unknown error occurred'
+    };
+}
+};
+export const deleteCustomer = async (customerId: string) => {
+  try {
+    await connectDB();
+    const customer = await Customer.findByIdAndDelete(customerId);
+    return customer;
+  } catch (error: unknown) {
+    return { 
+        status: 500, 
+         message: error instanceof Error ? error.message : 'An unknown error occurred'
+    };
+}
+}
