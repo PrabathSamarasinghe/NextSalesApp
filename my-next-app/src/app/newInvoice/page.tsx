@@ -427,7 +427,7 @@ useEffect(() => {
                           >
                             <option value="">Select a product</option>
                             {products.map((product, index) => (
-                              <option key={index} value={product._id}>
+                              product.stock > 0 && <option key={index} value={product._id}>
                                 {product.name}
                               </option>
                             ))}
