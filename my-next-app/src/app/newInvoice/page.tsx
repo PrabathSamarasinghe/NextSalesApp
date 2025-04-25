@@ -567,7 +567,7 @@ useEffect(() => {
                   <div className="flex justify-between py-3 border-t border-gray-300 mt-2">
                     <span className="text-gray-800 font-semibold">Total:</span>
                     <span className="text-gray-800 font-bold text-lg">
-                      {formatCurrency(invoice.total)}
+                      {isNaN(invoice.total) ? formatCurrency(0) : formatCurrency(invoice.total)}
                     </span>
                   </div>
                 </div>

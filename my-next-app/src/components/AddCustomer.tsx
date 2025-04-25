@@ -18,8 +18,8 @@ const AddCustomer = ({setIsModalOpen}: AddCustomerProps) => {
 
   const [newCustomer, setNewCustomer] = useState<CustomerDetails>({
     name: "",
-    email: null,
-    phone: null,
+    email: "default@example.com",
+    phone: "123-456-7890",
     address: "Sri Lanka",
     epfNumber: null,
   });
