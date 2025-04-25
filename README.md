@@ -1,9 +1,7 @@
 # Sales Ledger Manager
-
-A lightweight and efficient Next.js + Electron based sales tracking app that helps manage customer-wise and product-wise sales data using invoice inputs — as a desktop app or a hosted web app.
+A lightweight and efficient Next.js based sales tracking web application that helps manage customer-wise and product-wise sales data using invoice inputs — deployed and hosted on Vercel.
 
 ## 🚀 Features
-
 - **Invoice-Based Entry**
   - Seamlessly record sales through structured invoice data.
 - **Customer Account Management**
@@ -15,38 +13,50 @@ A lightweight and efficient Next.js + Electron based sales tracking app that hel
   - Easily track sales per product and spot top-performing items.
 
 ## 🛠️ Built With
-
 - **Next.js** – React framework with built-in backend API support
-- **Electron.js** – Converts the web app into a native desktop application
 - **API Routes** – Built-in backend handling for data & logic
 - **MongoDB** – Backend database
 - **Modular MVC Pattern** – Clean backend structure for scalability
 - **Environment Variables** – .env.local for DB & secret credentials
 
-## 🖥️ Desktop App with Electron.js
+## ☁️ Vercel Deployment
+Sales Ledger Manager is deployed on Vercel for seamless hosting and continuous deployment.
 
-Sales Ledger Manager is also available as a desktop application thanks to Electron.
-You can package and distribute .exe, .dmg, or .AppImage builds for Windows, macOS, and Linux.
+### 💻 Benefits of Vercel Integration:
+- Automatic deployments with Git integration
+- Built-in CI/CD pipeline
+- Serverless functions for backend API routes
+- Global CDN for fast loading
+- Environment variable management
+- Easy preview deployments for testing
 
-### 💻 Benefits of Electron Integration:
+### 🚀 Deployment Instructions:
+1. Push your code to GitHub, GitLab, or Bitbucket
+2. Import your repository in Vercel:
+   ```
+   https://vercel.com/import
+   ```
+3. Add environment variables:
+   - `MONGODB_URI`: Your MongoDB connection string
+   - Add other required secrets
+4. Deploy with a single click
+5. Your app will be live at `your-project-name.vercel.app`
 
-- Works completely offline
-- Local data storage or remote database support
-- Electron handles the app shell, while Next.js powers the UI and logic
-
-### 🛠️ Run Electron Locally:
-
+### 🛠️ Development Workflow:
 ```bash
-# First, build the Next.js app
+# Install dependencies
+npm install
+
+# Run development server
+npm run dev
+
+# Build for production
 npm run build
 
-# Then start Electron (assuming configured)
-npm run electron
+# Start production server locally
+npm start
 ```
 
-You can bundle it with electron-builder for distribution.
-
 ## 🤝 Contribute
-
 Feel free to fork, contribute, or raise issues if you have ideas, suggestions, or improvements.
 Let's build something awesome together! 💪
