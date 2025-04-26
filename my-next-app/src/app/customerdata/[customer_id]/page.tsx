@@ -17,6 +17,7 @@ import {
 import { useRouter } from "next/navigation";
 import { useParams } from "next/navigation";
 import UpdateCustomer from "@/components/UpdateCustomer";
+import Pagination from "@/components/Pagination";
 
 interface CustomerId {
   params: {
@@ -56,6 +57,9 @@ export default function CustomerDetails() {
     epfNumber: "",
     totalSpent: 0,
   });
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(6);
 
   const [customerSummary, setCustomerSummary] =
     useState<CustomerSummary | null>(null);
@@ -176,6 +180,10 @@ export default function CustomerDetails() {
   const [selectedInvoice, setSelectedInvoice] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  const lastPostIndex = currentPage * itemsPerPage;
+  const firstPostIndex = lastPostIndex - itemsPerPage;
+  const currentPosts = invoices.slice(firstPostIndex, lastPostIndex);
+
   // Format date function
   const formatDate = (dateString: string) => {
     if (!dateString) return "N/A";
@@ -201,43 +209,43 @@ export default function CustomerDetails() {
             <span>Back to Customers</span>
           </button>
           <div className="flex space-x-4">
-          <button
-            type="button"
-            onClick={() => setIsModalOpen(true)}
-            className="inline-flex items-center px-5 py-2.5 bg-blue-700 text-white font-medium rounded-md hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 shadow-md"
-          >
-            <Plus size={18} className="mr-2" />
-            Update Customer
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              if (confirm("Are you sure you want to delete this customer?")) {
-                fetch(`/api/customer/delete`, {
-                  method: "POST",
-                  headers: {
-                    "Content-Type": "application/json",
-                  },
-                  body: JSON.stringify({ customerId: customer_id }),
-                })
-                  .then((response) => {
-                    if (response.ok) {
-                      alert("Customer deleted successfully");
-                      navigate.push("/customers");
-                    } else {
-                      alert("Failed to delete customer");
-                    }
+            <button
+              type="button"
+              onClick={() => setIsModalOpen(true)}
+              className="inline-flex items-center px-5 py-2.5 bg-blue-700 text-white font-medium rounded-md hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 shadow-md"
+            >
+              <Plus size={18} className="mr-2" />
+              Update Customer
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (confirm("Are you sure you want to delete this customer?")) {
+                  fetch(`/api/customer/delete`, {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ customerId: customer_id }),
                   })
-                  .catch((error) => {
-                    console.error("Error deleting customer:", error);
-                  });
-              }
-            }}
-            className="inline-flex items-center px-5 py-2.5 bg-red-700 text-white font-medium rounded-md hover:bg-red-800 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-all duration-200 shadow-md"
-          >
-            <Trash2 size={18} className="mr-2" />
-            Delete Customer
-          </button>
+                    .then((response) => {
+                      if (response.ok) {
+                        alert("Customer deleted successfully");
+                        navigate.push("/customers");
+                      } else {
+                        alert("Failed to delete customer");
+                      }
+                    })
+                    .catch((error) => {
+                      console.error("Error deleting customer:", error);
+                    });
+                }
+              }}
+              className="inline-flex items-center px-5 py-2.5 bg-red-700 text-white font-medium rounded-md hover:bg-red-800 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-all duration-200 shadow-md"
+            >
+              <Trash2 size={18} className="mr-2" />
+              Delete Customer
+            </button>
           </div>
         </div>
 
@@ -549,8 +557,8 @@ export default function CustomerDetails() {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {invoices.length > 0 ? (
-                      invoices.map((invoice) => (
+                    {currentPosts.length > 0 ? (
+                      currentPosts.map((invoice) => (
                         <tr
                           key={invoice._id}
                           className="hover:bg-gray-50 transition-colors duration-150"
@@ -609,7 +617,6 @@ export default function CustomerDetails() {
                               >
                                 <Eye size={18} />
                               </button>
-                              
                             </div>
                           </td>
                         </tr>
@@ -627,6 +634,15 @@ export default function CustomerDetails() {
                   </tbody>
                 </table>
               </div>
+                {invoices.length > 0 && (
+                  <div className="flex justify-end mt-4">
+                    <Pagination
+                      currentPage={currentPage}
+                      totalPages={Math.ceil(invoices.length / itemsPerPage)}
+                      onPageChange={setCurrentPage}
+                    />
+                  </div>
+                )}
 
               {/* Invoice Details Section */}
               {selectedInvoice && (
