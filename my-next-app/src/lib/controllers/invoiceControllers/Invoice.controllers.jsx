@@ -171,11 +171,6 @@ export const getTopSellingProducts = async () => {
       {
         $sort: { totalQuantity: -1 },
       },
-      // Limit to top 5 products
-      // {
-      //   $limit: 5,
-      // },
-      // Optional: Look up additional product details if needed
       {
         $lookup: {
           from: "products",
@@ -392,5 +387,86 @@ export const getProductSalesReport = async (req, res) => {
       message: "Failed to generate product sales report",
       error: error.message,
     });
+  }
+};
+
+export const customerSummary = async (customerId) => {
+  try {
+    await connectDB();
+    
+    // Find all non-cancelled invoices for this customer
+    const invoices = await Invoice.find({ 
+      customer: customerId,
+      isCancelled: false 
+    }).populate('items.product');
+    
+    // Initialize an object to store product summary
+    const productSummaryMap = {};
+    
+    // Process all invoices and their items
+    invoices.forEach(invoice => {
+      invoice.items.forEach(item => {
+        const productId = item.product._id.toString();
+        
+        // If the product is already in our map, update quantities and totals
+        if (productSummaryMap[productId]) {
+          productSummaryMap[productId].quantity += item.quantity;
+          productSummaryMap[productId].totalSpent += item.total;
+        } 
+        // Otherwise, create a new entry for this product
+        else {
+          productSummaryMap[productId] = {
+            productId: productId,
+            productName: item.name,
+            quantity: item.quantity,
+            totalSpent: item.total,
+            // If you have product category in your model, you can include it here
+            category: item.product.category || "N/A",
+            averagePrice: item.price
+          };
+        }
+      });
+    });
+    
+    // Convert the map to an array
+    const productSummary = Object.values(productSummaryMap);
+    
+    // Calculate additional metrics for each product
+    productSummary.forEach(product => {
+      product.averagePrice = product.totalSpent / product.quantity;
+    });
+    
+    // Calculate overall totals
+    const totalInvoices = invoices.length;
+    const totalSpent = invoices.reduce((sum, invoice) => sum + invoice.total, 0);
+    const totalItemsPurchased = productSummary.reduce((sum, product) => sum + product.quantity, 0);
+    
+    // Get the latest purchase date
+    const latestInvoice = invoices.length > 0 ? 
+      invoices.reduce((latest, invoice) => {
+        return new Date(invoice.date) > new Date(latest.date) ? invoice : latest;
+      }, invoices[0]) : null;
+    
+    const latestPurchaseDate = latestInvoice ? latestInvoice.date : null;
+    
+    return {
+      status: 200,
+      data: {
+        customerStats: {
+          totalInvoices,
+          totalSpent,
+          totalItemsPurchased,
+          latestPurchaseDate
+        },
+        productSummary: productSummary.sort((a, b) => b.quantity - a.quantity) // Sort by quantity in descending order
+      }
+    };
+    
+  } catch (error) {
+    console.error("Error in customerSummary:", error);
+    return {
+      status: 500,
+      message: error.message,
+    };
   }
 };
