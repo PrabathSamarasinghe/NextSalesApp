@@ -5,7 +5,7 @@ import { Search, ArrowUpDown, ArrowLeft, ChevronRight, Plus } from 'lucide-react
 import { useRouter } from 'next/navigation';
 
 import AddCustomer from '@/components/AddCustomer';
-
+import Pagination from '@/components/Pagination';
 
 interface CustomerDetails {
   name: string;
@@ -28,7 +28,8 @@ export default function CustomerList() {
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const navigate = useRouter(); // useRouter from next/navigation
-  
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(6);
   // State for new customer form
 //   const loadingContext = useContext(LoadingContext);
   
@@ -62,31 +63,6 @@ export default function CustomerList() {
             console.error('Error fetching customers:', error);
         }
     }
-    //   loadingContext.setLoading(true); // Set loading to true when fetching data
-    //   try {
-    //     // Fetch all customers
-    //     const { data: customerList } = await api.get('/customers/customers');
-    
-    //     // Fetch totalSpent for each customer in parallel
-    //     const totals = await Promise.all(
-    //       customerList.map(async (customer: Customer) => {
-    //         try {
-    //           const { data } = await api.get(`/invoices/additional/${customer._id}`);              
-    //           return { ...customer, totalSpent: data.totalSpent, lastPurchase: data.lastPurchaseDate };
-    //         } catch (err) {
-    //           console.error(`Error fetching totalSpent for customer ${customer._id}:`, err);
-    //           return { ...customer, totalSpent: 0, lastPurchase: null }; // Fallback to 0 and null for lastPurchase
-    //         }
-    //       })
-    //     );
-    
-    //     // Set updated customers with totalSpent included
-    //     setCustomers(totals);
-    //     loadingContext.setLoading(false); // Set loading to false after fetching data
-    //   } catch (error) {
-    //     console.error('Error fetching customers:', error);
-    //   }
-    // };
     fetchCustomers();    
   }, []);
 
@@ -107,8 +83,15 @@ export default function CustomerList() {
       day: 'numeric' 
     });
   };
+
+  const lastPostIndex = currentPage * itemsPerPage;
+  const firstPostIndex = lastPostIndex - itemsPerPage;
+  const currentPosts = customers.slice(
+    firstPostIndex,
+    lastPostIndex
+  );
   // Filter and sort customers
-  const filteredCustomers = customers
+  const filteredCustomers = currentPosts
     .filter(customer => 
       customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       customer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -270,6 +253,16 @@ export default function CustomerList() {
             </tbody>
           </table>
         </div>
+        <div className="mt-4 flex justify-between items-center">
+          <div className="text-sm text-gray-500">
+            Showing {firstPostIndex + 1} to {Math.min(lastPostIndex, customers.length)} of {customers.length} results
+          </div>
+          <Pagination 
+            currentPage={currentPage} 
+            totalPages={Math.ceil(customers.length / itemsPerPage)} 
+            onPageChange={setCurrentPage} 
+          />
+          </div>
       </div>
 
       {/* Add Customer Modal */}

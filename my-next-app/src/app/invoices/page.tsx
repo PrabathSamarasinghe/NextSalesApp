@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 
 import { useRouter } from "next/navigation";
+import Pagination from "@/components/Pagination";
 import Link from "next/link";
 
 interface CustomerDetails {
@@ -44,6 +45,8 @@ export default function InvoicesList() {
     InvoiceStructure[]
   >([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(6);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterOpen, setFilterOpen] = useState(false);
   const [currentSort, setCurrentSort] = useState({
@@ -73,8 +76,14 @@ export default function InvoicesList() {
     fetchInvoices();
   }, []); // Remove invoicesStructure dependency to prevent infinite loop
 
+  const lastPostIndex = currentPage * itemsPerPage;
+  const firstPostIndex = lastPostIndex - itemsPerPage;
+  const currentPosts = invoicesStructure.slice(
+    firstPostIndex,
+    lastPostIndex
+  );
   // Filter and sort invoices
-  const filteredInvoices = invoicesStructure
+  const filteredInvoices = currentPosts
     .filter((invoice) => {
       // Search term filtering
       const matchesSearch =
@@ -416,14 +425,17 @@ export default function InvoicesList() {
             <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 sm:px-6">
               <div className="flex items-center justify-between">
                 <div className="text-sm text-gray-700">
-                  Showing{" "}
-                  <span className="font-medium">{filteredInvoices.length}</span>{" "}
-                  of{" "}
-                  <span className="font-medium">
-                    {invoicesStructure.length}
-                  </span>{" "}
-                  invoices
+                  Showing {firstPostIndex + 1} to {Math.min(lastPostIndex, invoicesStructure.length)} of {invoicesStructure.length} results
                 </div>
+                <div className="flex-shrink-0">
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={Math.ceil(
+                      invoicesStructure.length / itemsPerPage
+                    )}
+                    onPageChange={(page) => setCurrentPage(page)}
+                  />
+                  </div>
               </div>
             </div>
           </>
@@ -551,3 +563,4 @@ export default function InvoicesList() {
     </div>
   );
 }
+

@@ -2,10 +2,12 @@
 import { useState, useEffect } from "react";
 import { Plus, Search, Edit, Trash2, ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
-
+import Pagination from "@/components/Pagination";
 export default function ProductsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(6);
   const [producttoUpdate, setProductToUpdate] = useState({
     _id: "",
     name: "",
@@ -80,13 +82,17 @@ export default function ProductsPage() {
     }
   };
 
+  const lastPostIndex = currentPage * itemsPerPage;
+  const firstPostIndex = lastPostIndex - itemsPerPage;
+  const currentPosts = products.slice(firstPostIndex, lastPostIndex);
+
   const filteredProducts = searchTerm
-    ? products.filter(
+    ? currentPosts.filter(
         (product) =>
           product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
           product.category.toLowerCase().includes(searchTerm.toLowerCase())
       )
-    : products;
+    : currentPosts;
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -165,9 +171,9 @@ export default function ProductsPage() {
                     {product.stock}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {product.stock > 0 ? 
-                      product.stock * product.price : "Out of Stock"
-                      }
+                    {product.stock > 0
+                      ? product.stock * product.price
+                      : "Out of Stock"}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <button
@@ -224,6 +230,19 @@ export default function ProductsPage() {
             </p>
           </div>
         )}
+
+        <div className="mt-4 flex justify-between items-center">
+          <div className="text-sm text-gray-500">
+            Showing {firstPostIndex + 1} to{" "}
+            {Math.min(lastPostIndex, products.length)} of {products.length}{" "}
+            results
+          </div>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={Math.ceil(products.length / itemsPerPage)}
+            onPageChange={setCurrentPage}
+          />
+        </div>
       </div>
 
       {isModalOpen && (

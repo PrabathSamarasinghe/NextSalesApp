@@ -27,7 +27,7 @@ export const createInvoice = async (invoiceData) => {
 export const getAllInvoices = async () => {
   try {
     await connectDB();
-    const invoices = await Invoice.find({}).exec();
+    const invoices = await Invoice.find({}).sort({ date: -1 }).exec();
     return { status: 200, invoices };
   } catch (error) {
     return {
