@@ -29,7 +29,7 @@ export default function CustomerList() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const navigate = useRouter(); // useRouter from next/navigation
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(6);
+  const [itemsPerPage] = useState(6);
   // State for new customer form
 //   const loadingContext = useContext(LoadingContext);
   
