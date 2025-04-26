@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useLayoutEffect } from "react";
 import {
   ArrowLeft,
   Calendar,
@@ -32,7 +32,7 @@ export default function CustomerDetails() {
     totalSpent: 0,
   });
   
-  useEffect(() => {
+  useLayoutEffect(() => {
     const fetchCustomer = async () => {
       try {
         const response = await fetch(`/api/customer/getcustomer`, {

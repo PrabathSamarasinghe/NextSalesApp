@@ -1,5 +1,5 @@
 "use client";
-import { JSX, useState, useEffect } from "react";
+import { JSX, useState, useLayoutEffect } from "react";
 import { Save, Plus, Trash2, ArrowLeft, Check, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import AddCustomer from "@/components/AddCustomer";
@@ -46,7 +46,7 @@ interface Product {
 export default function InvoiceEntry(): JSX.Element {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-useEffect(() => {
+useLayoutEffect(() => {
     const fetchCustomers = async () => {
       const response = await fetch("/api/customer/all");
       const data = await response.json();

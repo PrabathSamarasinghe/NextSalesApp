@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from "react";
+import { useState, useLayoutEffect } from "react";
 import {
   ChevronRight,
   Users,
@@ -59,7 +59,7 @@ export default function Dashboard() {
 
   const router = useRouter();
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const fetchStats = async () => {
       try {
         const response = await fetch("/api/admin/stats");

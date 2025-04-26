@@ -1,5 +1,5 @@
 'use client';
-import { useEffect } from 'react';
+import { useLayoutEffect } from 'react';
 import { useRouter } from 'next/navigation';
 export default function Error({
     error,
@@ -10,7 +10,7 @@ export default function Error({
 }) {
     const router = useRouter();
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         console.error(error);
         setTimeout(() => {
             router.push('/'); // Redirect to home page after 5 seconds

@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useLayoutEffect } from "react";
 import { Plus, Search, Edit, Trash2, ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Pagination from "@/components/Pagination";
@@ -24,7 +24,7 @@ export default function ProductsPage() {
       stock: 0,
     },
   ]);
-  useEffect(() => {
+  useLayoutEffect(() => {
     const fetchProducts = async () => {
       try {
         const response = await fetch("/api/product/all", {

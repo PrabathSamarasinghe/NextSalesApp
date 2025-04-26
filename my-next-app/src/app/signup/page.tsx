@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from 'react';
+import { useState, useLayoutEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -15,7 +15,7 @@ const SignupPage = () => {
     });
     const [authError, setAuthError] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
-    useEffect(() => {
+    useLayoutEffect(() => {
         const checkAdmin = async () => {
             const res = await fetch('/api/admin/count', {
                 method: 'GET',

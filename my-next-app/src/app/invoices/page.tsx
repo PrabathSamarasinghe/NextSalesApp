@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useLayoutEffect } from "react";
 import {
   Search,
   Filter,
@@ -60,7 +60,7 @@ export default function InvoicesList() {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const navigate = useRouter();
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const fetchInvoices = async () => {
       const response = await fetch("/api/invoice/getall", {
         method: "GET",

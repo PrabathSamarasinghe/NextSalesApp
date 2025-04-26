@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useLayoutEffect } from "react";
 import { X } from "lucide-react";
 
 interface CustomerDetails {
@@ -26,7 +26,7 @@ const UpdateCustomer = ({ setIsModalOpen, customerId }: UpdateCustomerProps) => 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const getCustomer = async () => {
       try {
         setIsLoading(true);

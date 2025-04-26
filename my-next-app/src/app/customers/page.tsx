@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from 'react';
+import { useState, useLayoutEffect } from 'react';
 import { Search, ArrowUpDown, ArrowLeft, ChevronRight, Plus } from 'lucide-react';
 // import { useNavigate } from 'react-router-dom';
 import { useRouter } from 'next/navigation';
@@ -35,7 +35,7 @@ export default function CustomerList() {
   
   const [customers, setCustomers] = useState<Customer[]>([]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const fetchCustomers = async () => {
         const response = await fetch('/api/customer/all');
         const data = await response.json();

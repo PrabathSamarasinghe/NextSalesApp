@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useLayoutEffect } from "react";
 import {
   BarChart,
   Bar,
@@ -29,7 +29,7 @@ export default function ProductSalesReport() {
   const [customEndDate, setCustomEndDate] = useState("");
   const [showCustomDateFields, setShowCustomDateFields] = useState(false);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     fetchSalesData();
   }, [timeFrame, customStartDate, customEndDate]);
 
