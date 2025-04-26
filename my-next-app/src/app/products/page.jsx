@@ -24,6 +24,7 @@ export default function ProductsPage() {
       stock: 0,
     },
   ]);
+  
   useLayoutEffect(() => {
     const fetchProducts = async () => {
       try {
