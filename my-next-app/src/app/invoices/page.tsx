@@ -37,6 +37,7 @@ interface InvoiceStructure {
   total: number;
   isPaid: boolean;
   isCancelled: boolean;
+  advance?: number;
   items?: InvoiceItem[];
 }
 
@@ -78,10 +79,7 @@ export default function InvoicesList() {
 
   const lastPostIndex = currentPage * itemsPerPage;
   const firstPostIndex = lastPostIndex - itemsPerPage;
-  const currentPosts = invoicesStructure.slice(
-    firstPostIndex,
-    lastPostIndex
-  );
+  const currentPosts = invoicesStructure.slice(firstPostIndex, lastPostIndex);
   // Filter and sort invoices
   const filteredInvoices = currentPosts
     .filter((invoice) => {
@@ -380,7 +378,10 @@ export default function InvoicesList() {
                           {new Date(invoice.date).toLocaleDateString()}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">
-                          Rs.{invoice.total.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
+                          Rs.
+                          {invoice.total
+                            .toFixed(2)
+                            .replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-center">
                           <StatusBadge isPaid={invoice.isPaid} />
@@ -425,7 +426,9 @@ export default function InvoicesList() {
             <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 sm:px-6">
               <div className="flex items-center justify-between">
                 <div className="text-sm text-gray-700">
-                  Showing {firstPostIndex + 1} to {Math.min(lastPostIndex, invoicesStructure.length)} of {invoicesStructure.length} results
+                  Showing {firstPostIndex + 1} to{" "}
+                  {Math.min(lastPostIndex, invoicesStructure.length)} of{" "}
+                  {invoicesStructure.length} results
                 </div>
                 <div className="flex-shrink-0">
                   <Pagination
@@ -435,7 +438,7 @@ export default function InvoicesList() {
                     )}
                     onPageChange={(page) => setCurrentPage(page)}
                   />
-                  </div>
+                </div>
               </div>
             </div>
           </>
@@ -444,123 +447,198 @@ export default function InvoicesList() {
 
       {/* Invoice Details Modal */}
       {showDetailsModal && selectedInvoice && (
-        <div className="fixed inset-0 bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold">Invoice Details</h2>
+        <div className="fixed inset-0 bg-black bg-opacity-40 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto border border-gray-200">
+            <div className="flex justify-between items-center px-6 py-4 border-b border-gray-200">
+              <h2 className="text-xl font-semibold text-gray-800">
+                Invoice Details
+              </h2>
               <button
                 onClick={() => setShowDetailsModal(false)}
-                className="text-gray-500 hover:text-gray-700"
+                className="text-gray-500 hover:text-gray-700 text-2xl focus:outline-none"
               >
                 ×
               </button>
             </div>
-            <div className="grid grid-cols-2 gap-4 mb-6">
-              <div className="p-4 bg-gray-50 rounded-lg shadow-sm border border-gray-200">
-              <p className="font-semibold text-gray-700 mb-2">
-                Invoice Number:
-              </p>
-              <p className="text-gray-900 text-lg">{selectedInvoice.invoiceNumber}</p>
+
+            <div className="p-6">
+              <div className="grid grid-cols-2 gap-6 mb-8">
+                <div>
+                  <div className="mb-6">
+                    <p className="text-sm uppercase tracking-wider text-gray-500 mb-1">
+                      Invoice Number
+                    </p>
+                    <p className="text-gray-900 font-medium text-lg">
+                      {selectedInvoice.invoiceNumber}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm uppercase tracking-wider text-gray-500 mb-1">
+                      Customer
+                    </p>
+                    <p className="text-gray-900 font-medium text-lg">
+                      {selectedInvoice.customerDetails.name}
+                    </p>
+                  </div>
+                </div>
+                <div>
+                  <div className="mb-6 text-right">
+                    <p className="text-sm uppercase tracking-wider text-gray-500 mb-1">
+                      Date
+                    </p>
+                    <p className="text-gray-900 font-medium text-lg">
+                      {new Date(selectedInvoice.date).toLocaleDateString(
+                        "en-US",
+                        {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                        }
+                      )}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm uppercase tracking-wider text-gray-500 mb-1">
+                      Status
+                    </p>
+                    <div className="flex items-center justify-end">
+                      <StatusBadge isPaid={selectedInvoice.isPaid} />
+                      {!selectedInvoice.isPaid && (
+                        <button
+                          className="ml-4 px-4 py-2 bg-emerald-600 text-white font-medium rounded hover:bg-emerald-700 transition-colors duration-200 shadow focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
+                          onClick={async () => {
+                            try {
+                              await fetch(`/api/invoice/paid`, {
+                                method: "POST",
+                                body: JSON.stringify({
+                                  invoiceId: selectedInvoice._id,
+                                }),
+                                headers: {
+                                  "Content-Type": "application/json",
+                                },
+                              });
+                              setInvoicesStructure((prev) =>
+                                prev.map((invoice) =>
+                                  invoice._id === selectedInvoice._id
+                                    ? { ...invoice, isPaid: true }
+                                    : invoice
+                                )
+                              );
+                              setSelectedInvoice((prev) => ({
+                                ...prev!,
+                                isPaid: true,
+                              }));
+                            } catch (error) {
+                              console.error(
+                                "Error marking invoice as paid:",
+                                error
+                              );
+                            }
+                          }}
+                        >
+                          Mark as Paid
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div className="p-4 bg-gray-50 rounded-lg shadow-sm border border-gray-200">
-              <p className="font-semibold text-gray-700 mb-2 text-right">
-                Date:
-              </p>
-              <p className="text-gray-900 text-lg text-right">
-                {new Date(selectedInvoice.date).toLocaleDateString()}
-              </p>
+
+              {selectedInvoice.isCancelled && (
+                <div className="bg-red-50 border-l-4 border-red-500 text-red-800 p-4 mb-6">
+                  <div className="flex">
+                    <div className="flex-shrink-0">
+                      <svg
+                        className="h-5 w-5 text-red-500"
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zm-1 9a1 1 0 100-2 1 1 0 000 2z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    </div>
+                    <div className="ml-3">
+                      <p className="font-medium">
+                        This invoice has been cancelled.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="overflow-hidden border border-gray-200 rounded-lg mb-6">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left">Item</th>
+                      <th className="px-6 py-3 text-right">Quantity</th>
+                      <th className="px-6 py-3 text-right">Price</th>
+                      <th className="px-6 py-3 text-right">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {selectedInvoice.items?.map((item, index) => (
+                      <tr key={index}>
+                        <td className="px-6 py-4 text-sm text-gray-900">
+                          {item.name}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-500 text-right">
+                          {item.quantity}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-500 text-right">
+                          Rs.
+                          {item.price
+                            .toFixed(2)
+                            .replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-900 font-medium text-right">
+                          Rs.
+                          {(item.quantity * item.price)
+                            .toFixed(2)
+                            .replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-              <div className="p-4 bg-gray-50 rounded-lg shadow-sm border border-gray-200">
-              <p className="font-semibold text-gray-700 mb-2">
-                Customer:
-              </p>
-              <p className="text-gray-900 text-lg">
-                {selectedInvoice.customerDetails.name}
-              </p>
-              </div>
-              <div className="p-4 bg-gray-50 rounded-lg shadow-sm border border-gray-200 flex flex-col">
-              <p className="font-semibold text-gray-700 mb-2">
-                Status:
-              </p>
-              <div className="flex items-center justify-between">
-                <StatusBadge isPaid={selectedInvoice.isPaid} />
-                {!selectedInvoice.isPaid && (
-                <button 
-                  className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors duration-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
-                  onClick={async () => {
-                  try {
-                    await fetch(`/api/invoice/paid`, {
-                    method: "POST",
-                    body: JSON.stringify({ invoiceId: selectedInvoice._id }),
-                    headers: {
-                      "Content-Type": "application/json",
-                    },
-                    });
-                    setInvoicesStructure((prev) =>
-                    prev.map((invoice) =>
-                      invoice._id === selectedInvoice._id
-                      ? { ...invoice, isPaid: true }
-                      : invoice
-                    )
-                    );
-                    setSelectedInvoice((prev) => ({
-                    ...prev!,
-                    isPaid: true,
-                    }));
-                  } catch (error) {
-                    console.error("Error marking invoice as paid:", error);
-                  }
-                  }}
-                >
-                  Mark as Paid
-                </button>
-                )}
-              </div>
+
+              <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
+                <div className="space-y-3">
+                  
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600 font-medium">
+                        Advance Payment
+                      </span>
+                      <span className="text-gray-800">
+                        Rs.
+                        {(selectedInvoice.advance || 0)
+                          .toFixed(2)
+                          .replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
+                      </span>
+                    </div>
+                
+                  <div className="flex justify-between items-center pt-3 border-t border-gray-200">
+                    <span className="text-lg font-semibold text-gray-900">
+                      Total Amount
+                    </span>
+                    <span className="text-lg font-bold text-gray-900">
+                      Rs.
+                      {selectedInvoice.total
+                        .toFixed(2)
+                        .replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
-            {selectedInvoice.isCancelled && (
-              <div className="bg-red-100 text-red-800 p-4 rounded-md mb-4">
-                <p className="font-semibold">
-                  This invoice has been cancelled.
-                </p>
-              </div>
-            )}
-            <table className="w-full mb-4">
-              <thead>
-                <tr className="bg-gray-50">
-                  <th className="px-4 py-2 text-left">Item</th>
-                  <th className="px-4 py-2 text-right">Quantity</th>
-                  <th className="px-4 py-2 text-right">Price</th>
-                  <th className="px-4 py-2 text-right">Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                {selectedInvoice.items?.map((item, index) => (
-                  <tr key={index} className="border-b">
-                    <td className="px-4 py-2">{item.name}</td>
-                    <td className="px-4 py-2 text-right">{item.quantity}</td>
-                    <td className="px-4 py-2 text-right">Rs.{item.price.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}</td>
-                    <td className="px-4 py-2 text-right">
-                      Rs.{(item.quantity * item.price).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-              <tfoot>
-                <tr className="font-bold">
-                  <td colSpan={3} className="px-4 py-2 text-right">
-                    Total:
-                  </td>
-                  <td className="px-4 py-2 text-right">
-                    Rs.{selectedInvoice.total.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
-                  </td>
-                </tr>
-              </tfoot>
-            </table>
           </div>
         </div>
       )}
     </div>
   );
 }
-

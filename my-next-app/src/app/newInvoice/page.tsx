@@ -30,6 +30,8 @@ interface InvoiceData {
   customer: string;
   customerDetails: CustomerDetails;
   isPaid: boolean;
+  advance: number; // Added advance payment field
+  paymentStatus: "paid" | "unpaid" | "advance"; // Added payment status field
   items: InvoiceItem[];
   total: number;
   notes: string;
@@ -40,13 +42,13 @@ interface Product {
   name: string;
   price: number;
   stock: number;
-  category?: string; // Added category field
+  category?: string;
 }
 
 export default function InvoiceEntry(): JSX.Element {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-useLayoutEffect(() => {
+  useLayoutEffect(() => {
     const fetchCustomers = async () => {
       const response = await fetch("/api/customer/all");
       const data = await response.json();
@@ -79,7 +81,7 @@ useLayoutEffect(() => {
     fetchNewInvoiceNumber();
     fetchProducts();
     fetchCustomers();
-}, [isModalOpen]);
+  }, [isModalOpen]);
 
   const router = useRouter();
   const [invoice, setInvoice] = useState<InvoiceData>({
@@ -95,6 +97,8 @@ useLayoutEffect(() => {
       address: "",
     },
     isPaid: false,
+    advance: 0, // Initialize advance payment as 0
+    paymentStatus: "unpaid", // Initialize payment status as unpaid
     items: [{ id: 1, name: "", product: "", quantity: 1, price: 0, total: 0 }],
     total: 0,
     notes: "",
@@ -128,7 +132,7 @@ useLayoutEffect(() => {
           const selectedProduct = products.find((p) => p._id === value);
           if (selectedProduct) {
             updatedItem.price = selectedProduct.price;
-            updatedItem.name = selectedProduct.name; // Add this line
+            updatedItem.name = selectedProduct.name;
           }
         }
 
@@ -140,7 +144,7 @@ useLayoutEffect(() => {
     });
 
     const subtotal = updatedItems.reduce((sum, item) => sum + item.total, 0);
-    const total = subtotal
+    const total = subtotal;
 
     setInvoice({
       ...invoice,
@@ -220,6 +224,29 @@ useLayoutEffect(() => {
     }
   };
 
+  // Function to handle payment status change
+  const handlePaymentStatusChange = (status: "paid" | "unpaid" | "advance") => {
+    const isPaid = status === "paid";
+    setInvoice({
+      ...invoice,
+      paymentStatus: status,
+      isPaid: isPaid,
+      // Reset advance amount if switching to paid or unpaid
+      advance: status !== "advance" ? 0 : invoice.advance,
+    });
+  };
+
+  // Function to handle advance amount change
+  const handleAdvanceChange = (amount: string) => {
+    const advanceAmount = parseFloat(amount) || 0;
+    // Ensure advance amount doesn't exceed total
+    const validAdvance = Math.min(advanceAmount, invoice.total);
+    setInvoice({
+      ...invoice,
+      advance: validAdvance,
+    });
+  };
+
   // Function to handle saving the invoice
   const handleSaveInvoice = async () => {
     // Validate if a customer is selected
@@ -232,15 +259,23 @@ useLayoutEffect(() => {
     if (invoice.items.some((item) => !item.product)) {
       alert("Please select products for all invoice items");
       return;
-    } 
-    
+    }
+
+    // Prepare invoice data for saving
+    const invoiceData = {
+      ...invoice,
+      // Make sure we send the required fields for the mongoose model
+      isPaid: invoice.paymentStatus === "paid",
+      advance: invoice.paymentStatus === "advance" ? invoice.advance : 0,
+    };
+
     try {
       const response = await fetch("/api/invoice/create", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(invoice),
+        body: JSON.stringify(invoiceData),
       });
 
       if (!response.ok) {
@@ -269,7 +304,7 @@ useLayoutEffect(() => {
           </button>
         </div>
         <div className="bg-white rounded-lg shadow-lg border border-gray-100">
-            <div className="flex justify-between items-center px-6 py-5 border-b border-gray-200 bg-gray-50 rounded-t-lg">
+          <div className="flex justify-between items-center px-6 py-5 border-b border-gray-200 bg-gray-50 rounded-t-lg">
             <h2 className="text-2xl font-bold text-gray-800">New Invoice</h2>
             <button
               type="button"
@@ -279,7 +314,7 @@ useLayoutEffect(() => {
               <Plus size={20} className="mr-2" />
               Add Customer
             </button>
-            </div>
+          </div>
 
           <div className="p-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -291,7 +326,10 @@ useLayoutEffect(() => {
                   type="text"
                   value={invoice.invoiceNumber}
                   className="w-full p-2.5 border border-gray-300 rounded-md bg-gray-50 text-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  readOnly
+                  onChange={(e) =>
+                    setInvoice({ ...invoice, invoiceNumber: e.target.value })
+                  }
+              
                 />
               </div>
               <div>
@@ -441,22 +479,22 @@ useLayoutEffect(() => {
                         </td>
                         <td className="px-4 py-3">
                           <input
-                          type="number"
-                          min="1"
-                          className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          value={item.quantity}
-                          onChange={(e) => {
-                            const selectedProduct = products.find(p => p._id === item.product);
-                            const maxStock = selectedProduct?.stock || 1;
-                            const value = Math.min(parseInt(e.target.value), maxStock);
-                            updateItemField(
-                            item.id,
-                            "",
-                            "quantity",
-                            value
-                            );
-                          }}
-                          max={products.find(p => p._id === item.product)?.stock || 1}
+                            type="number"
+                            min="1"
+                            className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            value={item.quantity}
+                            onChange={(e) => {
+                              const selectedProduct = products.find(p => p._id === item.product);
+                              const maxStock = selectedProduct?.stock || 1;
+                              const value = Math.min(parseInt(e.target.value), maxStock);
+                              updateItemField(
+                                item.id,
+                                "",
+                                "quantity",
+                                value
+                              );
+                            }}
+                            max={products.find(p => p._id === item.product)?.stock || 1}
                           />
                           {item.product && (
                             <p className={`absolute text-[50%] ${(products.find(p => p._id === item.product)?.stock ?? 0) > 20 ? 'text-gray-500' : 'text-red-500'}`}>
@@ -466,17 +504,17 @@ useLayoutEffect(() => {
                         </td>
                         <td className="px-4 py-3">
                           <input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          value={item.price}
-                          onChange={(e) => updateItemField(
-                            item.id,
-                            "",
-                            "price",
-                            parseFloat(e.target.value) || 0
-                          )}
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            value={item.price}
+                            onChange={(e) => updateItemField(
+                              item.id,
+                              "",
+                              "price",
+                              parseFloat(e.target.value) || 0
+                            )}
                           />
                           {item.product && (
                             <p className="absolute text-[50%] text-gray-500">
@@ -486,10 +524,10 @@ useLayoutEffect(() => {
                         </td>
                         <td className="px-4 py-3">
                           <input
-                          type="text"
-                          className="w-full p-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700 font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          value={isNaN(item.total) ? formatCurrency(0) : formatCurrency(item.total)}
-                          readOnly
+                            type="text"
+                            className="w-full p-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700 font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            value={isNaN(item.total) ? formatCurrency(0) : formatCurrency(item.total)}
+                            readOnly
                           />
                         </td>
                         <td className="px-4 py-3 text-right">
@@ -515,53 +553,105 @@ useLayoutEffect(() => {
                     Payment Status
                   </legend>
                   <div className="flex flex-col sm:flex-row gap-3 mt-2">
+                    {/* Paid button */}
                     <button
                       type="button"
-                      aria-pressed={invoice.isPaid}
+                      aria-pressed={invoice.paymentStatus === "paid"}
                       className={`
                         px-4 py-2 rounded-md transition-colors duration-200
                         flex items-center justify-center space-x-2
                         focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 w-full
                         ${
-                          invoice.isPaid
+                          invoice.paymentStatus === "paid"
                             ? "bg-green-100 text-green-700 hover:bg-green-200 border-2 border-green-500"
                             : "bg-gray-100 text-gray-600 hover:bg-gray-200 border-2 border-transparent"
                         }
                       `}
-                      onClick={() => setInvoice({ ...invoice, isPaid: true })}
+                      onClick={() => handlePaymentStatusChange("paid")}
                     >
                       <Check
                         size={18}
                         className={`${
-                          invoice.isPaid ? "opacity-100" : "opacity-0"
+                          invoice.paymentStatus === "paid" ? "opacity-100" : "opacity-0"
                         }`}
                       />
                       <span>Paid</span>
                     </button>
+                    
+                    {/* Advance Payment button */}
                     <button
                       type="button"
-                      aria-pressed={!invoice.isPaid}
+                      aria-pressed={invoice.paymentStatus === "advance"}
                       className={`
                         px-4 py-2 rounded-md transition-colors duration-200
                         flex items-center justify-center space-x-2
                         focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 w-full
                         ${
-                          !invoice.isPaid
+                          invoice.paymentStatus === "advance"
+                            ? "bg-blue-100 text-blue-700 hover:bg-blue-200 border-2 border-blue-500"
+                            : "bg-gray-100 text-gray-600 hover:bg-gray-200 border-2 border-transparent"
+                        }
+                      `}
+                      onClick={() => handlePaymentStatusChange("advance")}
+                    >
+                      <Check
+                        size={18}
+                        className={`${
+                          invoice.paymentStatus === "advance" ? "opacity-100" : "opacity-0"
+                        }`}
+                      />
+                      <span>Advance</span>
+                    </button>
+                    
+                    {/* Unpaid button */}
+                    <button
+                      type="button"
+                      aria-pressed={invoice.paymentStatus === "unpaid"}
+                      className={`
+                        px-4 py-2 rounded-md transition-colors duration-200
+                        flex items-center justify-center space-x-2
+                        focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 w-full
+                        ${
+                          invoice.paymentStatus === "unpaid"
                             ? "bg-red-100 text-red-700 hover:bg-red-200 border-2 border-red-500"
                             : "bg-gray-100 text-gray-600 hover:bg-gray-200 border-2 border-transparent"
                         }
                       `}
-                      onClick={() => setInvoice({ ...invoice, isPaid: false })}
+                      onClick={() => handlePaymentStatusChange("unpaid")}
                     >
                       <X
                         size={18}
                         className={`${
-                          !invoice.isPaid ? "opacity-100" : "opacity-0"
+                          invoice.paymentStatus === "unpaid" ? "opacity-100" : "opacity-0"
                         }`}
                       />
                       <span>Unpaid</span>
                     </button>
                   </div>
+                  
+                  {/* Advance payment amount input */}
+                  {invoice.paymentStatus === "advance" && (
+                    <div className="mt-4">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Advance Amount
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          min="0"
+                          max={invoice.total}
+                          step="0.01"
+                          className="w-full p-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          value={invoice.advance || ""}
+                          onChange={(e) => handleAdvanceChange(e.target.value)}
+                          placeholder="Enter advance amount"
+                        />
+                        <div className="text-xs text-gray-500 mt-1">
+                          Maximum: {formatCurrency(invoice.total)}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </fieldset>
               </div>
               <div className="w-full md:w-1/2 lg:w-1/3">
@@ -575,6 +665,22 @@ useLayoutEffect(() => {
                       {isNaN(invoice.total) ? formatCurrency(0) : formatCurrency(invoice.total)}
                     </span>
                   </div>
+                  
+                  {/* Display advance payment in summary if applicable */}
+                  {invoice.paymentStatus === "advance" && invoice.advance > 0 && (
+                    <div className="flex justify-between py-2 text-sm">
+                      <span className="text-gray-700">Advance Payment:</span>
+                      <span className="text-gray-700">{formatCurrency(invoice.advance)}</span>
+                    </div>
+                  )}
+                  
+                  {/* Display remaining balance if advance payment */}
+                  {invoice.paymentStatus === "advance" && invoice.advance > 0 && (
+                    <div className="flex justify-between py-2 border-t border-gray-200 text-sm font-medium">
+                      <span className="text-gray-700">Remaining Balance:</span>
+                      <span className="text-gray-700">{formatCurrency(invoice.total - invoice.advance)}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

@@ -113,7 +113,7 @@ export const getNextInvoiceNumber = async () => {
     const lastInvoice = await Invoice.findOne({
       invoiceNumber: new RegExp(`INV-`),
     })
-      .sort({ invoiceNumber: -1 })
+      .sort({ date: -1 })
       .limit(1);
 
     if (!lastInvoice) {

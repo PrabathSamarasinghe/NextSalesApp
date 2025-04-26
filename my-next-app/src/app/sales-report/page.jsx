@@ -424,7 +424,7 @@ export default function ProductSalesReport() {
                           Total
                         </td>
                         <td className="px-6 py-4 text-center font-medium text-gray-900">
-                          {totalQuantity}
+                          {/* {totalQuantity} */}
                         </td>
                         <td className="px-6 py-4 text-right font-bold text-gray-900">
                           {formatCurrency(totalRevenue)}
