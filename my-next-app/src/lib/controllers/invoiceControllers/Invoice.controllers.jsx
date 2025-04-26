@@ -172,9 +172,9 @@ export const getTopSellingProducts = async () => {
         $sort: { totalQuantity: -1 },
       },
       // Limit to top 5 products
-      {
-        $limit: 5,
-      },
+      // {
+      //   $limit: 5,
+      // },
       // Optional: Look up additional product details if needed
       {
         $lookup: {

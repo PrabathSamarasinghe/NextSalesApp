@@ -137,7 +137,7 @@ export default function Dashboard() {
           quantity: product.totalQuantity,
           category: product.category,
         }));
-        setTopProducts(products);
+        setTopProducts(products.slice(0, 5)); 
       } catch (error) {
         console.error("Error fetching top products:", error);
       }
@@ -377,7 +377,7 @@ export default function Dashboard() {
                 </p>
               </div>
               <button
-                onClick={() => router.push("/products")}
+                onClick={() => router.push("/top-sold")}
                 className="text-blue-600 text-sm font-medium flex items-center hover:text-blue-700 transition duration-150 ease-in-out"
               >
                 View All <ChevronRight size={16} className="ml-1" />
@@ -399,7 +399,7 @@ export default function Dashboard() {
                             </span>
                         </p>
                         <p className="text-xs text-gray-500 mt-1">
-                          {product.quantity} units sold
+                          {product.quantity} {product.category.toLowerCase() === "bulk" ? "kgs" : "units"} sold
                         </p>
                       </div>
                       <div className="flex items-center">

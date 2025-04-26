@@ -391,7 +391,7 @@ export default function ProductSalesReport() {
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">
-                            {product.totalQuantity}
+                            {product.totalQuantity} {product.category.toLowerCase() === "bulk" ? "kgs" : "units"}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium text-gray-900">
                             {formatCurrency(product.totalRevenue)}

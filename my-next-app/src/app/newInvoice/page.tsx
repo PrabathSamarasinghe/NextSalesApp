@@ -458,6 +458,11 @@ useLayoutEffect(() => {
                           }}
                           max={products.find(p => p._id === item.product)?.stock || 1}
                           />
+                          {item.product && (
+                            <p className={`absolute text-[50%] ${(products.find(p => p._id === item.product)?.stock ?? 0) > 20 ? 'text-gray-500' : 'text-red-500'}`}>
+                              Available units: {products.find(p => p._id === item.product)?.stock || 0}
+                            </p>
+                          )}
                         </td>
                         <td className="px-4 py-3">
                           <input
