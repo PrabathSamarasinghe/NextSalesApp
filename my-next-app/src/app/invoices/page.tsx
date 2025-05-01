@@ -77,11 +77,8 @@ export default function InvoicesList() {
     fetchInvoices();
   }, []); // Remove invoicesStructure dependency to prevent infinite loop
 
-  const lastPostIndex = currentPage * itemsPerPage;
-  const firstPostIndex = lastPostIndex - itemsPerPage;
-  const currentPosts = invoicesStructure.slice(firstPostIndex, lastPostIndex);
-  // Filter and sort invoices
-  const filteredInvoices = currentPosts
+  // Filter and sort invoices first - MOVED THIS SECTION BEFORE PAGINATION
+  const filteredInvoices = invoicesStructure
     .filter((invoice) => {
       // Search term filtering
       const matchesSearch =
@@ -125,6 +122,22 @@ export default function InvoicesList() {
       }
       return 0;
     });
+
+  // Then apply pagination to the filtered results
+  const lastPostIndex = currentPage * itemsPerPage;
+  const firstPostIndex = lastPostIndex - itemsPerPage;
+  const currentPosts = filteredInvoices.slice(firstPostIndex, lastPostIndex);
+  
+  // Reset to first page when filters change
+  const handleFilterChange = (newStatus: string) => {
+    setStatusFilter(newStatus);
+    setCurrentPage(1); // Reset to first page when filter changes
+  };
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+    setCurrentPage(1); // Reset to first page when search changes
+  };
 
   const handleSort = (field: string) => {
     setCurrentSort((prev) => ({
@@ -233,7 +246,7 @@ export default function InvoicesList() {
               placeholder="Search invoices..."
               className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-64"
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={handleSearchChange}
             />
             <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
           </div>
@@ -262,7 +275,7 @@ export default function InvoicesList() {
                   <select
                     className="w-full px-3 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                     value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
+                    onChange={(e) => handleFilterChange(e.target.value)}
                   >
                     <option value="all">All Statuses</option>
                     <option value="paid">Paid</option>
@@ -275,7 +288,7 @@ export default function InvoicesList() {
                   <button
                     className="px-4 py-2 text-sm text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition duration-200"
                     onClick={() => {
-                      setStatusFilter("all");
+                      handleFilterChange("all");
                     }}
                   >
                     Reset
@@ -361,8 +374,8 @@ export default function InvoicesList() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredInvoices.length > 0 ? (
-                    filteredInvoices.map((invoice) => (
+                  {currentPosts.length > 0 ? (
+                    currentPosts.map((invoice) => (
                       <tr key={invoice._id} className="hover:bg-gray-50">
                         <td
                           className={`px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600 text-center ${
@@ -426,15 +439,15 @@ export default function InvoicesList() {
             <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 sm:px-6">
               <div className="flex items-center justify-between">
                 <div className="text-sm text-gray-700">
-                  Showing {firstPostIndex + 1} to{" "}
-                  {Math.min(lastPostIndex, invoicesStructure.length)} of{" "}
-                  {invoicesStructure.length} results
+                  Showing {filteredInvoices.length > 0 ? firstPostIndex + 1 : 0} to{" "}
+                  {Math.min(lastPostIndex, filteredInvoices.length)} of{" "}
+                  {filteredInvoices.length} results
                 </div>
                 <div className="flex-shrink-0">
                   <Pagination
                     currentPage={currentPage}
                     totalPages={Math.ceil(
-                      invoicesStructure.length / itemsPerPage
+                      filteredInvoices.length / itemsPerPage
                     )}
                     onPageChange={(page) => setCurrentPage(page)}
                   />
