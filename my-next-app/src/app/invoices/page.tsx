@@ -127,7 +127,11 @@ export default function InvoicesList() {
   const lastPostIndex = currentPage * itemsPerPage;
   const firstPostIndex = lastPostIndex - itemsPerPage;
   const currentPosts = filteredInvoices.slice(firstPostIndex, lastPostIndex);
+
+  const [advancePayment, setAdvancePayment] = useState<number>(0);
+  const [isAdvancePaymentClicked, setIsAdvancePaymentClicked] = useState(false);
   
+
   // Reset to first page when filters change
   const handleFilterChange = (newStatus: string) => {
     setStatusFilter(newStatus);
@@ -203,7 +207,7 @@ export default function InvoicesList() {
   };
 
   const StatusBadge = ({ isPaid }: { isPaid: boolean }) => {
-    const baseClasses = "px-2 py-1 rounded-full text-xs font-medium";
+    const baseClasses = "px-2 py-1 rounded-full text-xs font-medium text-center";
     const statusClasses = isPaid
       ? "bg-green-100 text-green-800"
       : "bg-yellow-100 text-yellow-800";
@@ -460,7 +464,7 @@ export default function InvoicesList() {
 
       {/* Invoice Details Modal */}
       {showDetailsModal && selectedInvoice && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 backdrop-blur-sm flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-opacity-40 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto border border-gray-200">
             <div className="flex justify-between items-center px-6 py-4 border-b border-gray-200">
               <h2 className="text-xl font-semibold text-gray-800">
@@ -514,11 +518,21 @@ export default function InvoicesList() {
                     <p className="text-sm uppercase tracking-wider text-gray-500 mb-1">
                       Status
                     </p>
-                    <div className="flex items-center justify-end">
+                    <div className="grid sm:flex items-center justify-end">
                       <StatusBadge isPaid={selectedInvoice.isPaid} />
+                        {!selectedInvoice.isPaid && (
+                          <button
+                            className="sm:ml-4 px-4 py-2 bg-blue-600 text-white font-medium rounded hover:bg-blue-700 transition-colors duration-200 shadow focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                            onClick={async () => {
+                              setIsAdvancePaymentClicked(true);
+                            }}
+                          >
+                            Advance Payment
+                          </button>
+                        )}
                       {!selectedInvoice.isPaid && (
                         <button
-                          className="ml-4 px-4 py-2 bg-emerald-600 text-white font-medium rounded hover:bg-emerald-700 transition-colors duration-200 shadow focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
+                          className="sm:ml-4 px-4 py-2 bg-emerald-600 text-white font-medium rounded hover:bg-emerald-700 transition-colors duration-200 shadow focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 my-2 sm:my-0"
                           onClick={async () => {
                             try {
                               await fetch(`/api/invoice/paid`, {
@@ -583,7 +597,7 @@ export default function InvoicesList() {
                 </div>
               )}
 
-              <div className="overflow-hidden border border-gray-200 rounded-lg mb-6">
+              <div className="overflow-x-auto border border-gray-200 rounded-lg mb-6">
                 <table className="w-full">
                   <thead>
                     <tr className="bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -648,6 +662,68 @@ export default function InvoicesList() {
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Advance Payment Modal */}
+      {isAdvancePaymentClicked && selectedInvoice && (
+        <div className="fixed inset-0 bg-opacity-40 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-2xl max-w-md w-full p-6 border border-gray-200">
+            <h2 className="text-xl font-semibold text-gray-800 mb-4">
+              Advance Payment
+            </h2>
+            <p className="text-gray-600 mb-4">
+              Enter the amount for advance payment:
+            </p>
+            <input
+              type="number"
+              // value={advancePayment===0 ? "" : advancePayment}
+              placeholder="Enter amount"
+              onChange={(e) => setAdvancePayment(Number(e.target.value))}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 mb-4"
+            />
+            <div className="flex justify-end space-x-2">
+              <button
+                className="px-4 py-2 text-sm text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition duration-200"
+                onClick={() => setIsAdvancePaymentClicked(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-4 py-2 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded-md transition duration-200"
+                onClick={async () => {
+                  try {
+                    await fetch(`/api/invoice/advance`, {
+                      method: "POST",
+                      body: JSON.stringify({
+                        invoiceId: selectedInvoice._id,
+                        paymentData: advancePayment,
+                      }),
+                      headers: {
+                        "Content-Type": "application/json",
+                      },
+                    });
+                    setInvoicesStructure((prev) =>
+                      prev.map((invoice) =>
+                        invoice._id === selectedInvoice._id
+                          ? { ...invoice, advance: advancePayment }
+                          : invoice
+                      )
+                    );
+                    setSelectedInvoice((prev) => ({
+                      ...prev!,
+                      advance: advancePayment,
+                    }));
+                  } catch (error) {
+                    console.error("Error updating advance payment:", error);
+                  }
+                  setIsAdvancePaymentClicked(false);
+                }}
+              >
+                Submit
+              </button>
             </div>
           </div>
         </div>

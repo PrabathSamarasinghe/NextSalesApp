@@ -90,6 +90,27 @@ export const getAdditionalData = async (customerId) => {
   }
 };
 
+export const advancePayment = async (invoiceId, paymentData) => {
+  try {
+    await connectDB();
+    const invoice = await Invoice.findById(invoiceId);
+    if (!invoice) {
+      throw new Error("Invoice not found");
+    }
+    invoice.advance += paymentData;
+    if (invoice.advance >= invoice.total) {
+      invoice.isPaid = true;
+    }
+    await invoice.save();
+    return { message: "Payment applied successfully" };
+  } catch (error) {
+    return {
+      status: 500,
+      message: error.message,
+    };
+  }
+};
+
 export const markAsPaid = async (id) => {
   try {
     await connectDB();
@@ -317,7 +338,6 @@ export const getProductSalesReport = async (req, res) => {
         $match: {
           date: dateFilter,
           isCancelled: false,
-          isPaid: true, // Optionally include only paid invoices
         },
       },
       // Unwind the items array
