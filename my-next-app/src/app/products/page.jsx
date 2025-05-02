@@ -1,10 +1,9 @@
 "use client";
 import { useState, useLayoutEffect } from "react";
-import { Plus, Search, Edit, Trash2, ArrowLeft } from "lucide-react";
+import { Plus, Search, Edit, Trash2, ArrowLeft, FileText } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Pagination from "@/components/Pagination";
 export default function ProductsPage() {
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(6);
@@ -24,7 +23,7 @@ export default function ProductsPage() {
       stock: 0,
     },
   ]);
-  
+
   useLayoutEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -66,22 +65,6 @@ export default function ProductsPage() {
     }
   };
 
-  const handleAddProduct = async (newProduct) => {
-    const response = await fetch("/api/product/add", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(newProduct),
-    });
-    const data = await response.json();
-    if (response.ok) {
-      setProducts((prevProducts) => [...prevProducts, data]);
-      setIsModalOpen(false);
-    } else {
-      console.error("Error adding product:", data.message);
-    }
-  };
 
   const lastPostIndex = currentPage * itemsPerPage;
   const firstPostIndex = lastPostIndex - itemsPerPage;
@@ -97,15 +80,30 @@ export default function ProductsPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Product Management</h1>
-        <button
-          className="inline-flex items-center px-4 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 shadow-sm"
-          onClick={() => setIsModalOpen(true)}
-        >
-          <Plus size={18} className="mr-2" />
-          Add Product
-        </button>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+        <h1 className="text-2xl font-semibold text-gray-900">
+          Product Management
+        </h1>
+        <div className=" grid sm:flex xs:flex-row gap-3 w-full sm:w-auto">
+          <button
+            className="inline-flex items-center px-4 py-2.5 bg-white border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 shadow-sm hover:shadow-md"
+            onClick={() => {
+              navigate.push("/received");
+            }}
+          >
+            <FileText size={18} className="mr-2" />
+            Received Invoices
+          </button>
+          <button
+            className="inline-flex items-center px-4 py-2.5 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-200 shadow-sm hover:shadow-md"
+            onClick={() => {
+              navigate.push("/recieved-invoice");
+            }}
+          >
+            <Plus size={18} className="mr-2" />
+            Add Products
+          </button>
+        </div>
       </div>
       <div className="flex items-center mb-6">
         <button
@@ -246,12 +244,6 @@ export default function ProductsPage() {
         </div>
       </div>
 
-      {isModalOpen && (
-        <AddProductModal
-          onClose={() => setIsModalOpen(false)}
-          onAdd={handleAddProduct}
-        />
-      )}
       {isUpdateModalOpen && (
         <UpdateProductModal
           onClose={() => setIsUpdateModalOpen(false)}
@@ -263,135 +255,135 @@ export default function ProductsPage() {
   );
 }
 
-function AddProductModal({ onClose, onAdd }) {
-  const [formData, setFormData] = useState({
-    name: "",
-    price: 0,
-    category: "",
-    stock: 0,
-  });
+// function AddProductModal({ onClose, onAdd }) {
+//   const [formData, setFormData] = useState({
+//     name: "",
+//     price: 0,
+//     category: "",
+//     stock: 0,
+//   });
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]:
-        name === "price"
-          ? parseFloat(value)
-          : name === "stock"
-          ? parseInt(value, 10)
-          : value,
-    });
-  };
+//   const handleChange = (e) => {
+//     const { name, value } = e.target;
+//     setFormData({
+//       ...formData,
+//       [name]:
+//         name === "price"
+//           ? parseFloat(value)
+//           : name === "stock"
+//           ? parseInt(value, 10)
+//           : value,
+//     });
+//   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    // Convert string values to appropriate types
-    const processedData = {
-      ...formData,
-      price: formData.price,
-      stock: formData.stock,
-    };
-    onAdd(processedData);
-  };
+//   const handleSubmit = (e) => {
+//     e.preventDefault();
+//     // Convert string values to appropriate types
+//     const processedData = {
+//       ...formData,
+//       price: formData.price,
+//       stock: formData.stock,
+//     };
+//     onAdd(processedData);
+//   };
 
-  return (
-    <div className="fixed inset-0 bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6 max-h-screen overflow-y-auto">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold text-gray-800">Add New Product</h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
-          >
-            &times;
-          </button>
-        </div>
+//   return (
+//     <div className="fixed inset-0 bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
+//       <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6 max-h-screen overflow-y-auto">
+//         <div className="flex justify-between items-center mb-4">
+//           <h2 className="text-xl font-bold text-gray-800">Add New Product</h2>
+//           <button
+//             onClick={onClose}
+//             className="text-gray-400 hover:text-gray-600"
+//           >
+//             &times;
+//           </button>
+//         </div>
 
-        <form onSubmit={handleSubmit}>
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Product Name*
-            </label>
-            <input
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            />
-          </div>
+//         <form onSubmit={handleSubmit}>
+//           <div className="mb-4">
+//             <label className="block text-sm font-medium text-gray-700 mb-1">
+//               Product Name*
+//             </label>
+//             <input
+//               type="text"
+//               name="name"
+//               value={formData.name}
+//               onChange={handleChange}
+//               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+//               required
+//             />
+//           </div>
 
-          <div className="grid grid-cols-2 gap-4 mb-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Price (Rs.)*
-              </label>
-              <input
-                type="number"
-                name="price"
-                value={formData.price}
-                onChange={handleChange}
-                step="0.01"
-                min="0"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
-            </div>
+//           <div className="grid grid-cols-2 gap-4 mb-4">
+//             <div>
+//               <label className="block text-sm font-medium text-gray-700 mb-1">
+//                 Price (Rs.)*
+//               </label>
+//               <input
+//                 type="number"
+//                 name="price"
+//                 value={formData.price}
+//                 onChange={handleChange}
+//                 step="0.01"
+//                 min="0"
+//                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+//                 required
+//               />
+//             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Stock Quantity*
-              </label>
-              <input
-                type="number"
-                name="stock"
-                value={formData.stock}
-                onChange={handleChange}
-                min="0"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
-            </div>
-          </div>
+//             <div>
+//               <label className="block text-sm font-medium text-gray-700 mb-1">
+//                 Stock Quantity*
+//               </label>
+//               <input
+//                 type="number"
+//                 name="stock"
+//                 value={formData.stock}
+//                 onChange={handleChange}
+//                 min="0"
+//                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+//                 required
+//               />
+//             </div>
+//           </div>
 
-          <div className="grid grid-cols-2 gap-4 mb-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Category*
-              </label>
-              <input
-                type="text"
-                name="category"
-                value={formData.category}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
-            </div>
-          </div>
+//           <div className="grid grid-cols-2 gap-4 mb-4">
+//             <div>
+//               <label className="block text-sm font-medium text-gray-700 mb-1">
+//                 Category*
+//               </label>
+//               <input
+//                 type="text"
+//                 name="category"
+//                 value={formData.category}
+//                 onChange={handleChange}
+//                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+//                 required
+//               />
+//             </div>
+//           </div>
 
-          <div className="flex justify-end space-x-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-            >
-              Add Product
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-}
+//           <div className="flex justify-end space-x-3">
+//             <button
+//               type="button"
+//               onClick={onClose}
+//               className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+//             >
+//               Cancel
+//             </button>
+//             <button
+//               type="submit"
+//               className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+//             >
+//               Add Product
+//             </button>
+//           </div>
+//         </form>
+//       </div>
+//     </div>
+//   );
+// }
 
 function UpdateProductModal({ onClose, onUpdate, product }) {
   const [formData, setFormData] = useState({

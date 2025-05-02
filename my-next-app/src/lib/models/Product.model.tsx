@@ -13,6 +13,10 @@ const ProductSchema = new mongoose.Schema({
         type: Number,
         required: true,
     },
+    entireStock: {
+        type: Number,
+        default: 0,
+    },
     stock: {
         type: Number,
         required: true,
