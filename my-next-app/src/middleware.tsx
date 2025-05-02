@@ -31,6 +31,7 @@ export const config = {
     '/products/:path*',
     '/sales-report', 
     '/sales-report/:path*',
-    '/customerdata/:path*'
+    '/customerdata/:path*',
+    '/newInvoice'
   ],
 };
