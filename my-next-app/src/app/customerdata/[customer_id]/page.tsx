@@ -1,5 +1,5 @@
 "use client";
-import { useState, useLayoutEffect } from "react";
+import { useState, useLayoutEffect, use } from "react";
 import {
   ArrowLeft,
   Calendar,
@@ -45,8 +45,11 @@ interface CustomerSummary {
   customerStats: CustomerStats;
   productSummary: ProductSummary[];
 }
+import { useContext } from "react";
+import { UserContext } from "@/context/AuthenticationProvider";
 
 export default function CustomerDetails() {
+  const role = useContext(UserContext);
   const navigate = useRouter();
   const { customer_id } = useParams() as CustomerId["params"];
   const [customer, setCustomer] = useState({
@@ -208,7 +211,7 @@ export default function CustomerDetails() {
             <ArrowLeft size={18} className="mr-2" />
             <span>Back to Customers</span>
           </button>
-          <div className="flex space-x-4">
+          {role === "admin" && <div className="flex space-x-4">
             <button
               type="button"
               onClick={() => setIsModalOpen(true)}
@@ -246,7 +249,7 @@ export default function CustomerDetails() {
               <Trash2 size={18} className="mr-2" />
               Delete Customer
             </button>
-          </div>
+          </div>}
         </div>
 
         <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">

@@ -32,7 +32,7 @@ export async function loginAdmin(reqBody: { username: string; password: string; 
         if (!process.env.JWT_SECRET) {
             throw new Error('JWT_SECRET is not defined');
         }
-        const token = jwt.sign({ id: admin._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+        const token = jwt.sign({ id: admin._id, role: admin.role, isVerified: admin.isVerified }, process.env.JWT_SECRET, { expiresIn: '1h' });
         const cookieStore = cookies();
         (await cookieStore).set('NextSalesApp', token, { httpOnly: true });
         return { status: 200, message: "Login successful" };
@@ -42,6 +42,31 @@ export async function loginAdmin(reqBody: { username: string; password: string; 
             message: error instanceof Error ? error.message : 'An unknown error occurred'
         };
     }
+}
+
+export async function getToken() {
+    try {
+        const cookieStore = cookies();
+        const token = (await cookieStore).get('NextSalesApp')?.value;
+        if (!token) {
+            return { status: 401, message: "No token found" };
+        }
+
+        const decoded = decodeJwtPayload(token);
+        return { status: 200, decoded };
+    } catch (error: unknown) {
+        return { 
+            status: 500, 
+            message: error instanceof Error ? error.message : 'An unknown error occurred'
+        };
+    }
+}
+function decodeJwtPayload(token: string): any {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const padded = base64.padEnd(base64.length + (4 - base64.length % 4) % 4, '=');
+    const jsonPayload = Buffer.from(padded, 'base64').toString('utf-8');
+    return JSON.parse(jsonPayload);
 }
 
 export async function logoutAdmin() {
@@ -132,6 +157,33 @@ export async function getAdminCount() {
         const adminCount = await Admin.countDocuments();
         return adminCount === 0 ? {value: true, status: 200} : {value: false, status: 404};
     } catch (error: unknown) {
+        return { 
+            status: 500, 
+             message: error instanceof Error ? error.message : 'An unknown error occurred'
+        };
+    }
+}
+
+export async function getAllAdmins() {
+    try {
+        await connectDB();
+        const admins = await Admin.find({});
+        return admins;
+    } catch (error: unknown) {
+        return { 
+            status: 500, 
+             message: error instanceof Error ? error.message : 'An unknown error occurred'
+        };
+    }
+}
+
+export async function changeAdminStatus(id: string, isVerified: boolean) {
+    try {
+        await connectDB();
+        const admin = await Admin.findByIdAndUpdate(id, { isVerified }, { new: true });
+        return admin;
+    }
+    catch (error: unknown) {
         return { 
             status: 500, 
              message: error instanceof Error ? error.message : 'An unknown error occurred'

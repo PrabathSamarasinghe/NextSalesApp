@@ -14,6 +14,8 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import AddCustomer from "@/components/AddCustomer";
+import { useContext } from "react";
+import { UserContext } from "@/context/AuthenticationProvider";
 
 interface Stats {
   totalSales: string;
@@ -23,6 +25,7 @@ interface Stats {
 }
 
 export default function Dashboard() {
+  const role = useContext(UserContext);
   const [stats, setStats] = useState<Stats>({
     totalSales: "0",
     invoicesIssued: 0,
@@ -60,6 +63,7 @@ export default function Dashboard() {
   const router = useRouter();
 
   useLayoutEffect(() => {
+    // console.log(role);
     const fetchStats = async () => {
       try {
         const response = await fetch("/api/admin/stats");
@@ -208,20 +212,31 @@ export default function Dashboard() {
                 <BarChart2 className="w-4 h-4 mr-2" />
                 Sales Report
               </Link>
-              <Link
-                href="/newInvoice"
-                className="inline-flex items-center justify-center px-4 py-2.5 text-sm font-medium bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-200 shadow"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                New Invoice
-              </Link>
-              <button
-                onClick={() => setIsModalOpen(true)}
-                className="inline-flex items-center justify-center px-4 py-2.5 text-sm font-medium bg-emerald-600 text-white rounded-md hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition-colors duration-200 shadow"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                New Customer
-              </button>
+              {role === "admin" && (
+                <>
+                  <Link
+                    href="/newInvoice"
+                    className="inline-flex items-center justify-center px-4 py-2.5 text-sm font-medium bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-200 shadow"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    New Invoice
+                  </Link>
+                  <button
+                    onClick={() => setIsModalOpen(true)}
+                    className="inline-flex items-center justify-center px-4 py-2.5 text-sm font-medium bg-emerald-600 text-white rounded-md hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition-colors duration-200 shadow"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    New Customer
+                  </button>
+                    <button
+                    onClick={() => router.push("/admin-requests")}
+                    className="inline-flex items-center justify-center px-4 py-2.5 text-sm font-medium bg-slate-800 text-white rounded-md hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 transition-colors duration-200 shadow"
+                    >
+                    <Users className="w-4 h-4 mr-2" />
+                    Admin Requests
+                    </button>
+                </>
+              )}
               <button
                 onClick={async () => {
                   await fetch("/api/admin/logout", {
