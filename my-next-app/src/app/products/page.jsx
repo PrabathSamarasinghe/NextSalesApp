@@ -3,7 +3,10 @@ import { useState, useLayoutEffect } from "react";
 import { Plus, Search, Edit, Trash2, ArrowLeft, FileText } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Pagination from "@/components/Pagination";
+import { useContext } from "react";
+import { UserContext } from "@/context/AuthenticationProvider";
 export default function ProductsPage() {
+  const role = useContext(UserContext);
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(6);
@@ -94,6 +97,7 @@ export default function ProductsPage() {
             <FileText size={18} className="mr-2" />
             Received Invoices
           </button>
+         {role === "admin" &&
           <button
             className="inline-flex items-center px-4 py-2.5 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-200 shadow-sm hover:shadow-md"
             onClick={() => {
@@ -102,7 +106,7 @@ export default function ProductsPage() {
           >
             <Plus size={18} className="mr-2" />
             Add Products
-          </button>
+          </button>}
         </div>
       </div>
       <div className="flex items-center mb-6">
@@ -149,9 +153,9 @@ export default function ProductsPage() {
                 <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Stock Validation
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                {role === "admin" && <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Actions
-                </th>
+                </th>}
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -174,7 +178,7 @@ export default function ProductsPage() {
                       ? product.stock * product.price
                       : "Out of Stock"}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  {role === "admin" && <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <button
                       className="text-blue-600 hover:text-blue-900 mr-3"
                       onClick={() => {
@@ -187,6 +191,8 @@ export default function ProductsPage() {
                     <button
                       className="text-red-600 hover:text-red-900"
                       onClick={async () => {
+                        alert(
+                          "Are you sure you want to delete this product? This action cannot be undone.")
                         await fetch(`/api/product/delete`, {
                           method: "DELETE",
                           headers: {
@@ -215,7 +221,7 @@ export default function ProductsPage() {
                     >
                       <Trash2 size={18} />
                     </button>
-                  </td>
+                  </td>}
                 </tr>
               ))}
             </tbody>

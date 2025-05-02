@@ -1,5 +1,5 @@
 "use client";
-import { useState, useLayoutEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -15,26 +15,7 @@ const SignupPage = () => {
     });
     const [authError, setAuthError] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
-    useLayoutEffect(() => {
-        const checkAdmin = async () => {
-            const res = await fetch('/api/admin/count', {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
-            const data = await res.json();
-
-            if (!data.value) {
-                setAuthError('Admin exists. Please login to continue.');
-                setTimeout(() => {
-                    router.push('/');
-                }, 2000);
-            }
-        };
-        checkAdmin();
-    }, [router]);
-
+    
     const handleChange = (e : { target: { name: string; value: string; }; }) => {
         const { name, value } = e.target;
         setFormData({

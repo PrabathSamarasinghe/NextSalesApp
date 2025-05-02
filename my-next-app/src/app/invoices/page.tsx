@@ -13,6 +13,8 @@ import {
 import { useRouter } from "next/navigation";
 import Pagination from "@/components/Pagination";
 import Link from "next/link";
+import { useContext } from "react";
+import { UserContext } from "@/context/AuthenticationProvider";
 
 interface CustomerDetails {
   _id: string;
@@ -42,6 +44,7 @@ interface InvoiceStructure {
 }
 
 export default function InvoicesList() {
+  const role = useContext(UserContext);
   const [invoicesStructure, setInvoicesStructure] = useState<
     InvoiceStructure[]
   >([]);
@@ -223,14 +226,14 @@ export default function InvoicesList() {
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Invoices</h1>
-        <div className="flex space-x-3">
+        {role === "admin" && <div className="flex space-x-3">
           <Link
             href="/newInvoice"
             className="inline-flex items-center px-4 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 shadow-sm"
           >
             New Invoice
           </Link>
-        </div>
+        </div>}
       </div>
 
       <div className="flex items-center mb-6">
@@ -369,12 +372,14 @@ export default function InvoicesList() {
                     >
                       Status
                     </th>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider text-center"
-                    >
-                      Actions
-                    </th>
+                    {role === "admin" && (
+                      <th
+                        scope="col"
+                        className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider text-center"
+                      >
+                        Actions
+                      </th>
+                    )}
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -403,15 +408,16 @@ export default function InvoicesList() {
                         <td className="px-6 py-4 whitespace-nowrap text-center">
                           <StatusBadge isPaid={invoice.isPaid} />
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
-                          <div className="flex justify-center space-x-2">
-                            <button
-                              className="text-blue-600 hover:text-blue-900"
-                              title="View"
-                              onClick={() => handleViewInvoice(invoice._id)}
-                            >
-                              <Eye className="h-4 w-4" />
-                            </button>
+                        {role === "admin" && (
+                          <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                            <div className="flex justify-center space-x-2">
+                              <button
+                                className="text-blue-600 hover:text-blue-900"
+                                title="View"
+                                onClick={() => handleViewInvoice(invoice._id)}
+                              >
+                                <Eye className="h-4 w-4" />
+                              </button>
 
                             {!invoice.isCancelled && (
                               <button
@@ -424,6 +430,7 @@ export default function InvoicesList() {
                             )}
                           </div>
                         </td>
+                      )}
                       </tr>
                     ))
                   ) : (

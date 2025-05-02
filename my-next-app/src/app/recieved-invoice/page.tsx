@@ -58,7 +58,7 @@ export default function ReceivedInvoiceEntry(): JSX.Element {
   const [receivedInvoice, setReceivedInvoice] = useState<ReceivedInvoiceData>({
     invoiceNumber: "",
     date: new Date().toISOString().split("T")[0],
-    supplier: "",
+    supplier: suppliers[0]?.name,
     items: [{ id: 1, name: "", product: "", quantity: 1, price: 0, total: 0 }],
     total: 0,
     notes: ""
@@ -108,7 +108,7 @@ export default function ReceivedInvoiceEntry(): JSX.Element {
     fetchProducts();
     // fetchSuppliers();
     fetchNewInvoiceNumber();
-  });
+  }, [receivedInvoice.items]);
 
   const updateItemField = (
     id: number,

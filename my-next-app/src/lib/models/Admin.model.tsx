@@ -19,6 +19,15 @@ const AdminSchema = new mongoose.Schema({
         required: true,
         unique: true,
     },
+    isVerified: {
+        type: Boolean,
+        default: false,
+    },
+    role:{
+        type: String,
+        enum: ['admin', 'viewer'],
+        default: 'viewer',
+    }
 },
 {
     timestamps: true,

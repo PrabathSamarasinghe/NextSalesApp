@@ -22,7 +22,11 @@ export async function addProduct(productData: {
 }) {
   try {
     await connectDB();
-    const product = new Product(productData);
+    const dataToSave = {
+      ...productData,
+      entireStock: productData.stock,
+    }
+    const product = new Product(dataToSave);
     await product.save();
     return product;
   } catch (error: unknown) {

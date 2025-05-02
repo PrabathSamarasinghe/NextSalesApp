@@ -11,6 +11,8 @@ import {
 import { useRouter } from "next/navigation";
 import Pagination from "@/components/Pagination";
 import Link from "next/link";
+import { useContext } from "react";
+import { UserContext } from "@/context/AuthenticationProvider";
 
 interface InvoiceItem {
   id: number;
@@ -32,6 +34,7 @@ interface ReceivedInvoiceStructure {
 }
 
 export default function ReceivedInvoicesList() {
+  const role = useContext(UserContext);
   const [invoicesStructure, setInvoicesStructure] = useState<
     ReceivedInvoiceStructure[]
   >([]);
@@ -158,14 +161,14 @@ export default function ReceivedInvoicesList() {
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Received Invoices</h1>
-        <div className="flex space-x-3">
+        {role === "admin" && <div className="flex space-x-3">
           <Link
             href="/recieved-invoice"
             className="inline-flex items-center px-4 py-2 bg-blue-50 text-blue-600 font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 shadow-sm"
           >
             New Received Invoice
           </Link>
-        </div>
+        </div>}
       </div>
 
       <div className="flex items-center mb-6">
