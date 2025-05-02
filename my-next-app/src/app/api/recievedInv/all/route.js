@@ -5,6 +5,6 @@ export async function GET() {
         const invoices = await getRecievedInvoices();
         return new Response(JSON.stringify(invoices), { status: 200 });
     } catch (error) {
-        return new Response("Internal Server Error", { status: 500 });
+        return new Response("Internal Server Error", { status: 500, message: error.message});
     }
 }

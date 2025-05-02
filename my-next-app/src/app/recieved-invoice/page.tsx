@@ -108,7 +108,7 @@ export default function ReceivedInvoiceEntry(): JSX.Element {
     fetchProducts();
     // fetchSuppliers();
     fetchNewInvoiceNumber();
-  }, []);
+  });
 
   const updateItemField = (
     id: number,
@@ -617,7 +617,7 @@ export default function ReceivedInvoiceEntry(): JSX.Element {
                     <li>Products will be added to inventory when saved</li>
                     <li>Check quantities and prices carefully</li>
                     <li>Make sure to select the correct supplier</li>
-                    <li>You can add new products directly using the "New Product" button</li>
+                    <li>{`You can add new products directly using the "New Product" button`}</li>
                   </ul>
                 </div>
               </div>
