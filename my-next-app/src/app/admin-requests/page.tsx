@@ -623,7 +623,7 @@ const AdminUserManagement: React.FC = () => {
             {roleFilter !== "all" && (
               <span className="mr-2">Filtered by: {roleFilter}</span>
             )}
-            {searchTerm && <span>Search: "{searchTerm}"</span>}
+            {searchTerm && <span>Search: {searchTerm}</span>}
           </div>
         </div>
       </div>
