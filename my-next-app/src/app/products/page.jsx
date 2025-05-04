@@ -3,10 +3,9 @@ import { useState, useLayoutEffect } from "react";
 import { Plus, Search, Edit, Trash2, ArrowLeft, FileText } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Pagination from "@/components/Pagination";
-import { useContext } from "react";
-import { UserContext } from "@/context/AuthenticationProvider";
+
 export default function ProductsPage() {
-  const role = useContext(UserContext);
+  const [role, setRole] = useState(); // Replace with actual role fetching logic
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(6);
@@ -28,6 +27,16 @@ export default function ProductsPage() {
   ]);
 
   useLayoutEffect(() => {
+    const fetchRole = async () => {
+      try{
+
+        const response = await fetch("/api/admin/auth");
+        const data = await response.json();
+        setRole(data.decoded.role)
+      }catch(error){
+        console.error("Error fetching role:", error);
+      }
+    }
     const fetchProducts = async () => {
       try {
         const response = await fetch("/api/product/all", {
@@ -42,6 +51,7 @@ export default function ProductsPage() {
         console.error("Error fetching products:", error);
       }
     };
+    fetchRole();
     fetchProducts();
   }, []);
   const [searchTerm, setSearchTerm] = useState("");
@@ -101,43 +111,43 @@ export default function ProductsPage() {
           <button
             className="inline-flex items-center px-4 py-2.5 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-200 shadow-sm hover:shadow-md"
             onClick={() => {
-              navigate.push("/recieved-invoice");
-            }}
-          >
-            <Plus size={18} className="mr-2" />
-            Add Products
-          </button>}
-        </div>
-      </div>
-      <div className="flex items-center mb-6">
-        <button
-          className="flex items-center text-gray-600 hover:text-blue-600"
-          onClick={() => navigate.push("/dashboard")}
-        >
-          <ArrowLeft size={20} className="mr-2" />
-          <span>Back to Dashboard</span>
-        </button>
-      </div>
+                navigate.push("/received-invoice");
+              }}
+              >
+              <Plus size={18} className="mr-2" />
+              Add Products
+              </button>}
+            </div>
+            </div>
+            <div className="flex items-center mb-6">
+            <button
+              className="flex items-center text-gray-600 hover:text-blue-600"
+              onClick={() => navigate.push("/dashboard")}
+            >
+              <ArrowLeft size={20} className="mr-2" />
+              <span>Back to Dashboard</span>
+            </button>
+            </div>
 
-      <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-        <div className="relative mb-6">
-          <Search
-            className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-            size={18}
-          />
-          <input
-            type="text"
-            placeholder="Search products by name, SKU, or category..."
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
+            <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+            <div className="relative mb-6">
+              <Search
+              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+              size={18}
+              />
+              <input
+              type="text"
+              placeholder="Search products by name, SKU, or category..."
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
 
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 text-center">
-            <thead className="bg-gray-50">
-              <tr>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200 text-center">
+              <thead className="bg-gray-50">
+                <tr>
                 <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Product Name
                 </th>
@@ -148,7 +158,10 @@ export default function ProductsPage() {
                   Price
                 </th>
                 <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Stock
+                 Entire Stock
+                </th>
+                <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Available Stock
                 </th>
                 <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Stock Validation
@@ -156,32 +169,35 @@ export default function ProductsPage() {
                 {role === "admin" && <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Actions
                 </th>}
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredProducts.map((product) => (
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {filteredProducts.map((product) => (
                 <tr key={product._id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {product.name}
+                  {product.name}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {product.category}
+                  {product.category}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    Rs.{product.price.toFixed(2)}
+                  Rs.{product.price.toFixed(2)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {product.stock}
+                  {product.entireStock}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {product.stock > 0
-                      ? product.stock * product.price
-                      : "Out of Stock"}
+                  {product.stock}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {product.stock > 0
+                    ? product.stock * product.price
+                    : "Out of Stock"}
                   </td>
                   {role === "admin" && <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <button
-                      className="text-blue-600 hover:text-blue-900 mr-3"
-                      onClick={() => {
+                  <button
+                    className="text-blue-600 hover:text-blue-900 mr-3"
+                    onClick={() => {
                         setIsUpdateModalOpen(true);
                         setProductToUpdate(product);
                       }}
@@ -191,8 +207,8 @@ export default function ProductsPage() {
                     <button
                       className="text-red-600 hover:text-red-900"
                       onClick={async () => {
-                        alert(
-                          "Are you sure you want to delete this product? This action cannot be undone.")
+                        if (confirm(
+                          "Are you sure you want to delete this product? This action cannot be undone.")){
                         await fetch(`/api/product/delete`, {
                           method: "DELETE",
                           headers: {
@@ -217,7 +233,7 @@ export default function ProductsPage() {
                           .catch((error) => {
                             console.error("Error deleting product:", error);
                           });
-                      }}
+                      }}}
                     >
                       <Trash2 size={18} />
                     </button>

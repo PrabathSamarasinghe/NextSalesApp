@@ -21,11 +21,10 @@ interface Customer extends CustomerDetails {
   lastPurchase: string;
   [key: string]: string | number;
 }
-import { useContext } from "react";
-import { UserContext } from "@/context/AuthenticationProvider";
+
 
 export default function CustomerList() {
-  const role = useContext(UserContext);
+  const [role, setRole] = useState<string>(); // Replace with actual role fetching logic
   const [searchTerm, setSearchTerm] = useState('');
   const [sortField, setSortField] = useState<string>('name');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
@@ -39,6 +38,16 @@ export default function CustomerList() {
   const [customers, setCustomers] = useState<Customer[]>([]);
 
   useLayoutEffect(() => {
+    const fetchRole = async () => {
+      try{
+
+        const response = await fetch("/api/admin/auth");
+        const data = await response.json();
+        setRole(data.decoded.role)
+      }catch(error){
+        console.error("Error fetching role:", error);
+      }
+    }
     const fetchCustomers = async () => {
         const response = await fetch('/api/customer/all');
         const data = await response.json();
@@ -66,6 +75,7 @@ export default function CustomerList() {
             console.error('Error fetching customers:', error);
         }
     }
+    fetchRole();
     fetchCustomers();    
   }, []);
 

@@ -13,8 +13,7 @@ import {
 import { useRouter } from "next/navigation";
 import Pagination from "@/components/Pagination";
 import Link from "next/link";
-import { useContext } from "react";
-import { UserContext } from "@/context/AuthenticationProvider";
+
 
 interface CustomerDetails {
   _id: string;
@@ -44,7 +43,7 @@ interface InvoiceStructure {
 }
 
 export default function InvoicesList() {
-  const role = useContext(UserContext);
+  const [role, setRole] = useState<string>();
   const [invoicesStructure, setInvoicesStructure] = useState<
     InvoiceStructure[]
   >([]);
@@ -65,6 +64,16 @@ export default function InvoicesList() {
   const navigate = useRouter();
 
   useLayoutEffect(() => {
+    const fetchRole = async () => {
+      try{
+
+        const response = await fetch("/api/admin/auth");
+        const data = await response.json();
+        setRole(data.decoded.role)
+      }catch(error){
+        console.error("Error fetching role:", error);
+      }
+    }
     const fetchInvoices = async () => {
       const response = await fetch("/api/invoice/getall", {
         method: "GET",
@@ -76,7 +85,7 @@ export default function InvoicesList() {
       setInvoicesStructure(data.invoices);
       setIsLoading(false);
     };
-
+    fetchRole();
     fetchInvoices();
   }, []); // Remove invoicesStructure dependency to prevent infinite loop
 
@@ -372,14 +381,12 @@ export default function InvoicesList() {
                     >
                       Status
                     </th>
-                    {role === "admin" && (
                       <th
                         scope="col"
                         className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider text-center"
                       >
                         Actions
                       </th>
-                    )}
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -408,29 +415,35 @@ export default function InvoicesList() {
                         <td className="px-6 py-4 whitespace-nowrap text-center">
                           <StatusBadge isPaid={invoice.isPaid} />
                         </td>
-                        {role === "admin" && (
                           <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                             <div className="flex justify-center space-x-2">
                               <button
                                 className="text-blue-600 hover:text-blue-900"
                                 title="View"
                                 onClick={() => handleViewInvoice(invoice._id)}
-                              >
+                                >
                                 <Eye className="h-4 w-4" />
                               </button>
 
-                            {!invoice.isCancelled && (
+                              {role === "admin" && !invoice.isCancelled && (
                               <button
                                 className="text-red-600 hover:text-red-900"
                                 title="Delete"
-                                onClick={() => handleDeleteInvoice(invoice._id)}
+                                onClick={() => {
+                                  if (
+                                    confirm(
+                                      "Are you sure you want to cancel this invoice?"
+                                    )
+                                  ) {
+                                    handleDeleteInvoice(invoice._id);
+                                  }
+                                }}
                               >
                                 <Trash2 className="h-4 w-4" />
                               </button>
                             )}
                           </div>
                         </td>
-                      )}
                       </tr>
                     ))
                   ) : (
@@ -527,7 +540,7 @@ export default function InvoicesList() {
                     </p>
                     <div className="grid sm:flex items-center justify-end">
                       <StatusBadge isPaid={selectedInvoice.isPaid} />
-                        {!selectedInvoice.isPaid && (
+                       {role === "admin" && <> {!selectedInvoice.isPaid && (
                           <button
                             className="sm:ml-4 px-4 py-2 bg-blue-600 text-white font-medium rounded hover:bg-blue-700 transition-colors duration-200 shadow focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                             onClick={async () => {
@@ -542,6 +555,7 @@ export default function InvoicesList() {
                           className="sm:ml-4 px-4 py-2 bg-emerald-600 text-white font-medium rounded hover:bg-emerald-700 transition-colors duration-200 shadow focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 my-2 sm:my-0"
                           onClick={async () => {
                             try {
+                              if(confirm("Are you sure you want to mark this invoice as paid?")) {
                               await fetch(`/api/invoice/paid`, {
                                 method: "POST",
                                 body: JSON.stringify({
@@ -562,6 +576,7 @@ export default function InvoicesList() {
                                 ...prev!,
                                 isPaid: true,
                               }));
+                            }
                             } catch (error) {
                               console.error(
                                 "Error marking invoice as paid:",
@@ -572,7 +587,7 @@ export default function InvoicesList() {
                         >
                           Mark as Paid
                         </button>
-                      )}
+                      )}</>}
                     </div>
                   </div>
                 </div>

@@ -45,11 +45,10 @@ interface CustomerSummary {
   customerStats: CustomerStats;
   productSummary: ProductSummary[];
 }
-import { useContext } from "react";
-import { UserContext } from "@/context/AuthenticationProvider";
+
 
 export default function CustomerDetails() {
-  const role = useContext(UserContext);
+  const [role, setRole] = useState<string>();
   const navigate = useRouter();
   const { customer_id } = useParams() as CustomerId["params"];
   const [customer, setCustomer] = useState({
@@ -69,6 +68,16 @@ export default function CustomerDetails() {
   const [isLoading, setIsLoading] = useState(true);
 
   useLayoutEffect(() => {
+    const fetchRole = async () => {
+      try{
+
+        const response = await fetch("/api/admin/auth");
+        const data = await response.json();
+        setRole(data.decoded.role)
+      }catch(error){
+        console.error("Error fetching role:", error);
+      }
+    }
     const fetchCustomer = async () => {
       try {
         const response = await fetch(`/api/customer/getcustomer`, {
@@ -154,6 +163,7 @@ export default function CustomerDetails() {
     };
 
     if (customer_id) {
+      fetchRole();
       fetchCustomer();
       fetchInvoices();
       fetchCustomerSummary();

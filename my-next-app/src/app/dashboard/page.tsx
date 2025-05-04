@@ -14,8 +14,7 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import AddCustomer from "@/components/AddCustomer";
-import { useContext } from "react";
-import { UserContext } from "@/context/AuthenticationProvider";
+
 
 interface Stats {
   totalSales: string;
@@ -25,7 +24,7 @@ interface Stats {
 }
 
 export default function Dashboard() {
-  const role = useContext(UserContext);
+  const [role, setRole] = useState<String>()
   const [stats, setStats] = useState<Stats>({
     totalSales: "0",
     invoicesIssued: 0,
@@ -63,7 +62,16 @@ export default function Dashboard() {
   const router = useRouter();
 
   useLayoutEffect(() => {
-    // console.log(role);
+    const fetchRole = async () => {
+      try{
+
+        const response = await fetch("/api/admin/auth");
+        const data = await response.json();
+        setRole(data.decoded.role)
+      }catch(error){
+        console.error("Error fetching role:", error);
+      }
+    }
     const fetchStats = async () => {
       try {
         const response = await fetch("/api/admin/stats");
@@ -186,7 +194,7 @@ export default function Dashboard() {
         console.error("Error fetching recent invoices:", error);
       }
     };
-
+    fetchRole();
     fetchRecentInvoices();
     fetchStats();
     fetchTopProducts();
