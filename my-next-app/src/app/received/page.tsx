@@ -11,8 +11,6 @@ import {
 import { useRouter } from "next/navigation";
 import Pagination from "@/components/Pagination";
 import Link from "next/link";
-import { useContext } from "react";
-import { UserContext } from "@/context/AuthenticationProvider";
 
 interface InvoiceItem {
   id: number;
@@ -34,7 +32,7 @@ interface ReceivedInvoiceStructure {
 }
 
 export default function ReceivedInvoicesList() {
-  const role = useContext(UserContext);
+  const [role, setRole] = useState<String>(); // Replace with actual role fetching logic
   const [invoicesStructure, setInvoicesStructure] = useState<
     ReceivedInvoiceStructure[]
   >([]);
@@ -53,6 +51,16 @@ export default function ReceivedInvoicesList() {
   const navigate = useRouter();
 
   useLayoutEffect(() => {
+    const fetchRole = async () => {
+      try{
+
+        const response = await fetch("/api/admin/auth");
+        const data = await response.json();
+        setRole(data.decoded.role)
+      }catch(error){
+        console.error("Error fetching role:", error);
+      }
+    }
     const fetchInvoices = async () => {
       try {
         const response = await fetch("/api/recievedInv/all", {
@@ -71,7 +79,7 @@ export default function ReceivedInvoicesList() {
         setIsLoading(false);
       }
     };
-
+    fetchRole();
     fetchInvoices();
   }, []);
 

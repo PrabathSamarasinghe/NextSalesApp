@@ -22,6 +22,6 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "src/lib/controllers/invoiceControllers/Invoice.controllers.jsx", "src/app/api/invoice/salesreport/route.jsx", "src/app/products/page.jsx", "src/app/sales-report/page.jsx", "src/app/api/customer/getcustomer/[customerId]/route.jsx", "src/app/top-sold/page.jsx", "src/app/api/customer/delete/route.js", "src/app/api/admin/logout/route.js", "src/lib/controllers/recievedControllers/recieved.controllers.jsx", "src/app/api/recievedInv/all/route.js", "src/app/not-verified/page.tsx"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "src/lib/controllers/invoiceControllers/Invoice.controllers.jsx", "src/app/api/invoice/salesreport/route.jsx", "src/app/products/page.jsx", "src/app/sales-report/page.jsx", "src/app/api/customer/getcustomer/[customerId]/route.jsx", "src/app/top-sold/page.jsx", "src/app/api/customer/delete/route.js", "src/app/api/admin/logout/route.js", "src/lib/controllers/recievedControllers/recieved.controllers.jsx", "src/app/api/recievedInv/all/route.js", "src/app/not-verified/page.tsx", "src/app/admin-requests/page.tsx"],
   "exclude": ["node_modules"]
 }
