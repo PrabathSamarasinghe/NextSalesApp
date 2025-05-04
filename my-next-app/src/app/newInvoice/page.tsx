@@ -329,7 +329,6 @@ export default function InvoiceEntry(): JSX.Element {
                   onChange={(e) =>
                     setInvoice({ ...invoice, invoiceNumber: e.target.value })
                   }
-              
                 />
               </div>
               <div>
@@ -431,118 +430,291 @@ export default function InvoiceEntry(): JSX.Element {
                 </button>
               </div>
 
+              {/* Mobile-responsive invoice table component */}
               <div className="overflow-x-auto rounded-lg border border-gray-200">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Product
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Quantity
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Price
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Total
-                      </th>
-                      <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider w-16"></th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {invoice.items.map((item) => (
-                      <tr key={item.id} className="hover:bg-gray-50">
-                        <td className="px-4 py-3">
-                          <select
-                            className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            value={item.product}
-                            onChange={(e) => {
-                              const selectedProduct = products.find(
-                                (p) => p._id === e.target.value
-                              );
-                              updateItemField(
-                                item.id,
-                                selectedProduct ? selectedProduct.name : "",
-                                "product",
-                                e.target.value
-                              );
-                            }}
-                          >
-                            <option value="">Select a product</option>
-                            {products.map((product, index) => (
-                              product.stock > 0 && <option key={index} value={product._id}>
-                                {product.name} {product.category ? `(${product.category})` : ''}
+                {/* Desktop view - regular table */}
+                <div className="hidden md:block">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Product
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Quantity
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Price
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Total
+                        </th>
+                        <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider w-16"></th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {invoice.items.map((item) => (
+                        <tr key={item.id} className="hover:bg-gray-50">
+                          <td className="px-4 py-3">
+                            <select
+                              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                              value={item.product}
+                              onChange={(e) => {
+                                const selectedProduct = products.find(
+                                  (p) => p._id === e.target.value
+                                );
+                                updateItemField(
+                                  item.id,
+                                  selectedProduct ? selectedProduct.name : "",
+                                  "product",
+                                  e.target.value
+                                );
+                              }}
+                            >
+                              <option value="">Select a product</option>
+                              {products.map(
+                                (product, index) =>
+                                  product.stock > 0 && (
+                                    <option key={index} value={product._id}>
+                                      {product.name}{" "}
+                                      {product.category
+                                        ? `(${product.category})`
+                                        : ""}
+                                    </option>
+                                  )
+                              )}
+                            </select>
+                          </td>
+                          <td className="px-4 py-3">
+                            <input
+                              type="number"
+                              min="1"
+                              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                              value={item.quantity}
+                              onChange={(e) => {
+                                const selectedProduct = products.find(
+                                  (p) => p._id === item.product
+                                );
+                                const maxStock = selectedProduct?.stock || 1;
+                                const value = Math.min(
+                                  parseInt(e.target.value),
+                                  maxStock
+                                );
+                                updateItemField(item.id, "", "quantity", value);
+                              }}
+                              max={
+                                products.find((p) => p._id === item.product)
+                                  ?.stock || 1
+                              }
+                            />
+                            {item.product && (
+                              <p
+                                className={`text-xs ${
+                                  (products.find((p) => p._id === item.product)
+                                    ?.stock ?? 0) > 20
+                                    ? "text-gray-500"
+                                    : "text-red-500"
+                                }`}
+                              >
+                                Available:{" "}
+                                {products.find((p) => p._id === item.product)
+                                  ?.stock || 0}
+                              </p>
+                            )}
+                          </td>
+                          <td className="px-4 py-3">
+                            <input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                              value={item.price}
+                              onChange={(e) =>
+                                updateItemField(
+                                  item.id,
+                                  "",
+                                  "price",
+                                  parseFloat(e.target.value) || 0
+                                )
+                              }
+                            />
+                            {item.product && (
+                              <p className="text-xs text-gray-500">
+                                Suggested:{" "}
+                                {formatCurrency(
+                                  products.find((p) => p._id === item.product)
+                                    ?.price || 0
+                                )}
+                              </p>
+                            )}
+                          </td>
+                          <td className="px-4 py-3">
+                            <input
+                              type="text"
+                              className="w-full p-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700 font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                              value={
+                                isNaN(item.total)
+                                  ? formatCurrency(0)
+                                  : formatCurrency(item.total)
+                              }
+                              readOnly
+                            />
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <button
+                              onClick={() => removeItem(item.id)}
+                              className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition-colors duration-200"
+                              aria-label="Remove item"
+                            >
+                              <Trash2 size={18} />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile view - card-style layout */}
+                <div className="md:hidden">
+                  {invoice.items.map((item) => (
+                    <div
+                      key={item.id}
+                      className="bg-white p-4 border-b border-gray-200"
+                    >
+                      <div className="flex justify-between items-center mb-2">
+                        <h3 className="text-sm font-medium text-gray-700">
+                          Product
+                        </h3>
+                        <button
+                          onClick={() => removeItem(item.id)}
+                          className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition-colors duration-200"
+                          aria-label="Remove item"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+
+                      <select
+                        className="w-full p-2 mb-4 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        value={item.product}
+                        onChange={(e) => {
+                          const selectedProduct = products.find(
+                            (p) => p._id === e.target.value
+                          );
+                          updateItemField(
+                            item.id,
+                            selectedProduct ? selectedProduct.name : "",
+                            "product",
+                            e.target.value
+                          );
+                        }}
+                      >
+                        <option value="">Select a product</option>
+                        {products.map(
+                          (product, index) =>
+                            product.stock > 0 && (
+                              <option key={index} value={product._id}>
+                                {product.name}{" "}
+                                {product.category
+                                  ? `(${product.category})`
+                                  : ""}
                               </option>
-                            ))}
-                          </select>
-                        </td>
-                        <td className="px-4 py-3">
+                            )
+                        )}
+                      </select>
+
+                      <div className="grid grid-cols-2 gap-4 mb-2">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Quantity
+                          </label>
                           <input
                             type="number"
                             min="1"
                             className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             value={item.quantity}
                             onChange={(e) => {
-                              const selectedProduct = products.find(p => p._id === item.product);
-                              const maxStock = selectedProduct?.stock || 1;
-                              const value = Math.min(parseInt(e.target.value), maxStock);
-                              updateItemField(
-                                item.id,
-                                "",
-                                "quantity",
-                                value
+                              const selectedProduct = products.find(
+                                (p) => p._id === item.product
                               );
+                              const maxStock = selectedProduct?.stock || 1;
+                              const value = Math.min(
+                                parseInt(e.target.value),
+                                maxStock
+                              );
+                              updateItemField(item.id, "", "quantity", value);
                             }}
-                            max={products.find(p => p._id === item.product)?.stock || 1}
+                            max={
+                              products.find((p) => p._id === item.product)
+                                ?.stock || 1
+                            }
                           />
                           {item.product && (
-                            <p className={`absolute text-[50%] ${(products.find(p => p._id === item.product)?.stock ?? 0) > 20 ? 'text-gray-500' : 'text-red-500'}`}>
-                              Available units: {products.find(p => p._id === item.product)?.stock || 0}
+                            <p
+                              className={`text-xs mt-1 ${
+                                (products.find((p) => p._id === item.product)
+                                  ?.stock ?? 0) > 20
+                                  ? "text-gray-500"
+                                  : "text-red-500"
+                              }`}
+                            >
+                              Available:{" "}
+                              {products.find((p) => p._id === item.product)
+                                ?.stock || 0}
                             </p>
                           )}
-                        </td>
-                        <td className="px-4 py-3">
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Price
+                          </label>
                           <input
                             type="number"
                             min="0"
                             step="0.01"
                             className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             value={item.price}
-                            onChange={(e) => updateItemField(
-                              item.id,
-                              "",
-                              "price",
-                              parseFloat(e.target.value) || 0
-                            )}
+                            onChange={(e) =>
+                              updateItemField(
+                                item.id,
+                                "",
+                                "price",
+                                parseFloat(e.target.value) || 0
+                              )
+                            }
                           />
                           {item.product && (
-                            <p className="absolute text-[50%] text-gray-500">
-                              Suggested price: {formatCurrency(products.find(p => p._id === item.product)?.price || 0)}
+                            <p className="text-xs mt-1 text-gray-500">
+                              Suggested:{" "}
+                              {formatCurrency(
+                                products.find((p) => p._id === item.product)
+                                  ?.price || 0
+                              )}
                             </p>
                           )}
-                        </td>
-                        <td className="px-4 py-3">
-                          <input
-                            type="text"
-                            className="w-full p-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700 font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            value={isNaN(item.total) ? formatCurrency(0) : formatCurrency(item.total)}
-                            readOnly
-                          />
-                        </td>
-                        <td className="px-4 py-3 text-right">
-                          <button
-                            onClick={() => removeItem(item.id)}
-                            className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition-colors duration-200"
-                            aria-label="Remove item"
-                          >
-                            <Trash2 size={18} />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Total
+                        </label>
+                        <input
+                          type="text"
+                          className="w-full p-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700 font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          value={
+                            isNaN(item.total)
+                              ? formatCurrency(0)
+                              : formatCurrency(item.total)
+                          }
+                          readOnly
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
 
@@ -572,12 +744,14 @@ export default function InvoiceEntry(): JSX.Element {
                       <Check
                         size={18}
                         className={`${
-                          invoice.paymentStatus === "paid" ? "opacity-100" : "opacity-0"
+                          invoice.paymentStatus === "paid"
+                            ? "opacity-100"
+                            : "opacity-0"
                         }`}
                       />
                       <span>Paid</span>
                     </button>
-                    
+
                     {/* Advance Payment button */}
                     <button
                       type="button"
@@ -597,12 +771,14 @@ export default function InvoiceEntry(): JSX.Element {
                       <Check
                         size={18}
                         className={`${
-                          invoice.paymentStatus === "advance" ? "opacity-100" : "opacity-0"
+                          invoice.paymentStatus === "advance"
+                            ? "opacity-100"
+                            : "opacity-0"
                         }`}
                       />
                       <span>Advance</span>
                     </button>
-                    
+
                     {/* Unpaid button */}
                     <button
                       type="button"
@@ -622,13 +798,15 @@ export default function InvoiceEntry(): JSX.Element {
                       <X
                         size={18}
                         className={`${
-                          invoice.paymentStatus === "unpaid" ? "opacity-100" : "opacity-0"
+                          invoice.paymentStatus === "unpaid"
+                            ? "opacity-100"
+                            : "opacity-0"
                         }`}
                       />
                       <span>Unpaid</span>
                     </button>
                   </div>
-                  
+
                   {/* Advance payment amount input */}
                   {invoice.paymentStatus === "advance" && (
                     <div className="mt-4">
@@ -662,25 +840,35 @@ export default function InvoiceEntry(): JSX.Element {
                   <div className="flex justify-between py-3 border-t border-gray-300 mt-2">
                     <span className="text-gray-800 font-semibold">Total:</span>
                     <span className="text-gray-800 font-bold text-lg">
-                      {isNaN(invoice.total) ? formatCurrency(0) : formatCurrency(invoice.total)}
+                      {isNaN(invoice.total)
+                        ? formatCurrency(0)
+                        : formatCurrency(invoice.total)}
                     </span>
                   </div>
-                  
+
                   {/* Display advance payment in summary if applicable */}
-                  {invoice.paymentStatus === "advance" && invoice.advance > 0 && (
-                    <div className="flex justify-between py-2 text-sm">
-                      <span className="text-gray-700">Advance Payment:</span>
-                      <span className="text-gray-700">{formatCurrency(invoice.advance)}</span>
-                    </div>
-                  )}
-                  
+                  {invoice.paymentStatus === "advance" &&
+                    invoice.advance > 0 && (
+                      <div className="flex justify-between py-2 text-sm">
+                        <span className="text-gray-700">Advance Payment:</span>
+                        <span className="text-gray-700">
+                          {formatCurrency(invoice.advance)}
+                        </span>
+                      </div>
+                    )}
+
                   {/* Display remaining balance if advance payment */}
-                  {invoice.paymentStatus === "advance" && invoice.advance > 0 && (
-                    <div className="flex justify-between py-2 border-t border-gray-200 text-sm font-medium">
-                      <span className="text-gray-700">Remaining Balance:</span>
-                      <span className="text-gray-700">{formatCurrency(invoice.total - invoice.advance)}</span>
-                    </div>
-                  )}
+                  {invoice.paymentStatus === "advance" &&
+                    invoice.advance > 0 && (
+                      <div className="flex justify-between py-2 border-t border-gray-200 text-sm font-medium">
+                        <span className="text-gray-700">
+                          Remaining Balance:
+                        </span>
+                        <span className="text-gray-700">
+                          {formatCurrency(invoice.total - invoice.advance)}
+                        </span>
+                      </div>
+                    )}
                 </div>
               </div>
             </div>
