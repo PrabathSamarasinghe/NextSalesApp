@@ -245,15 +245,15 @@ const AdminUserManagement: React.FC = () => {
           <div>
             <h1 className="text-3xl font-bold text-indigo-900 mb-2">User Management</h1>
             <p className="text-gray-500">Manage and monitor user accounts</p>
-          </div>
-          <div className="flex items-center mt-4 md:mt-0">
             <button
-              className="flex items-center text-indigo-600 hover:text-indigo-800 transition-colors duration-200 mr-6"
+              className="flex items-center text-indigo-600 hover:text-indigo-800 transition-colors duration-200 mr-6 sm:mt-6 mt-2"
               onClick={() => navigate.push("/dashboard")}
             >
               <ArrowLeft size={20} className="mr-2" />
               <span>Back to Dashboard</span>
             </button>
+          </div>
+          <div className="flex items-center mt-4 md:mt-0">
             <button
               onClick={fetchUsers}
               className="flex items-center gap-2 px-4 py-2 bg-white border border-indigo-200 rounded-lg shadow-sm hover:bg-indigo-50 transition-colors duration-200"
