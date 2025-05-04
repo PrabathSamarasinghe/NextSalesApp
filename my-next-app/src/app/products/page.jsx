@@ -412,6 +412,7 @@ function UpdateProductModal({ onClose, onUpdate, product }) {
     name: product.name,
     price: product.price.toString(),
     category: product.category,
+    entireStock: product.entireStock.toString(),
     stock: product.stock.toString(),
   });
 

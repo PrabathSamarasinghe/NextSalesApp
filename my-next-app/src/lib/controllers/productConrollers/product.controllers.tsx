@@ -66,7 +66,7 @@ export async function updatedProduct(id: string, productData: {
         message: 'Product not found' 
       };
     }
-    const product = await Product.findByIdAndUpdate(id, { ...productData, entireStock: prevProduct.entireStock }, { new: true });
+    const product = await Product.findByIdAndUpdate(id, { ...productData, entireStock: prevProduct.entireStock + (productData.stock === prevProduct.stock ? 0 : productData.stock) }, { new: true });
     return product;
   } catch (error: unknown) {
     return { 
