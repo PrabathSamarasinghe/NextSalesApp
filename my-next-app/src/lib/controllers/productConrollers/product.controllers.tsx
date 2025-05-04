@@ -59,7 +59,14 @@ export async function updatedProduct(id: string, productData: {
 }) {
   try {
     await connectDB();
-    const product = await Product.findByIdAndUpdate(id, { ...productData, entireStock: productData.entireStock }, { new: true });
+    const prevProduct = await Product.findById(id);
+    if (!prevProduct) {
+      return { 
+        status: 404, 
+        message: 'Product not found' 
+      };
+    }
+    const product = await Product.findByIdAndUpdate(id, { ...productData, entireStock: prevProduct.entireStock }, { new: true });
     return product;
   } catch (error: unknown) {
     return { 
