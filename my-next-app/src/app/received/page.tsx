@@ -32,7 +32,7 @@ interface ReceivedInvoiceStructure {
 }
 
 export default function ReceivedInvoicesList() {
-  const [role, setRole] = useState<String>(); // Replace with actual role fetching logic
+  const [role, setRole] = useState<string>(); // Replace with actual role fetching logic
   const [invoicesStructure, setInvoicesStructure] = useState<
     ReceivedInvoiceStructure[]
   >([]);

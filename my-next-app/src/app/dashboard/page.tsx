@@ -24,7 +24,7 @@ interface Stats {
 }
 
 export default function Dashboard() {
-  const [role, setRole] = useState<String>()
+  const [role, setRole] = useState<string>()
   const [stats, setStats] = useState<Stats>({
     totalSales: "0",
     invoicesIssued: 0,
