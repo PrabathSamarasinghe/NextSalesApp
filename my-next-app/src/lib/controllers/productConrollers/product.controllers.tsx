@@ -54,11 +54,12 @@ export async function updatedProduct(id: string, productData: {
   name: string;
   price: number;
   stock: number;
+  entireStock: number;
   category: string;
 }) {
   try {
     await connectDB();
-    const product = await Product.findByIdAndUpdate(id, productData, { new: true });
+    const product = await Product.findByIdAndUpdate(id, { ...productData, entireStock: productData.entireStock }, { new: true });
     return product;
   } catch (error: unknown) {
     return { 
