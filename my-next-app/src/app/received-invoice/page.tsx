@@ -2,6 +2,7 @@
 import { JSX, useState, useLayoutEffect } from "react";
 import { Save, Plus, Trash2, ArrowLeft, Check, X } from "lucide-react";
 import { useRouter } from "next/navigation";
+import LoadingPage from "@/components/loadingPage";
 
 // Define TypeScript interfaces
 interface InvoiceItem {
@@ -191,6 +192,7 @@ export default function ReceivedInvoiceEntry(): JSX.Element {
     }));
   }, [receivedInvoice.items]);
 
+  const [loading, setLoading] = useState<boolean>(false);
   // Function to handle saving the received invoice
   const handleSaveReceivedInvoice = async () => {
     // Validate if a supplier is selected
@@ -210,6 +212,7 @@ export default function ReceivedInvoiceEntry(): JSX.Element {
       alert("Please add at least one item to the invoice");
       return;
     }
+    setLoading(true);
 
     try {
       const response = await fetch("/api/recievedInv/create", {
@@ -227,7 +230,7 @@ export default function ReceivedInvoiceEntry(): JSX.Element {
       const data = await response.json();
       console.log("Received invoice saved successfully:", data);
       console.log("Received invoice data:", receivedInvoice);
-
+      setLoading(false);
       alert("Received invoice saved successfully!");
       router.push("/products");
     } catch (error) {
@@ -291,6 +294,10 @@ export default function ReceivedInvoiceEntry(): JSX.Element {
       setIsAddingProduct(false);
     }
   };
+
+  if (loading) {
+    return <LoadingPage />;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">

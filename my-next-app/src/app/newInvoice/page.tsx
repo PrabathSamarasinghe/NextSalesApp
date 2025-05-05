@@ -3,6 +3,7 @@ import { JSX, useState, useLayoutEffect } from "react";
 import { Save, Plus, Trash2, ArrowLeft, Check, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import AddCustomer from "@/components/AddCustomer";
+import LoadingPage from "@/components/loadingPage";
 
 // Define TypeScript interfaces
 interface CustomerDetails {
@@ -47,6 +48,7 @@ interface Product {
 
 export default function InvoiceEntry(): JSX.Element {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [clicked, setClicked] = useState(false);
 
   useLayoutEffect(() => {
     const fetchCustomers = async () => {
@@ -81,7 +83,7 @@ export default function InvoiceEntry(): JSX.Element {
     fetchNewInvoiceNumber();
     fetchProducts();
     fetchCustomers();
-  }, [isModalOpen]);
+  }, [isModalOpen, clicked]);
 
   const router = useRouter();
   const [invoice, setInvoice] = useState<InvoiceData>({
@@ -224,6 +226,7 @@ export default function InvoiceEntry(): JSX.Element {
     }
   };
 
+  const [loading, setLoading] = useState(false);
   // Function to handle payment status change
   const handlePaymentStatusChange = (status: "paid" | "unpaid" | "advance") => {
     const isPaid = status === "paid";
@@ -260,7 +263,8 @@ export default function InvoiceEntry(): JSX.Element {
       alert("Please select products for all invoice items");
       return;
     }
-
+    
+    setLoading(true);
     // Prepare invoice data for saving
     const invoiceData = {
       ...invoice,
@@ -284,12 +288,38 @@ export default function InvoiceEntry(): JSX.Element {
 
       const data = await response.json();
       console.log("Invoice saved successfully:", data);
-      router.push("/dashboard");
+      setInvoice({
+        invoiceNumber: "",
+        date: new Date().toISOString().split("T")[0],
+        epfNumber: "",
+        customer: "",
+        customerDetails: {
+          _id: "",
+          name: "",
+          email: "",
+          phone: "",
+          address: "",
+        },
+        isPaid: false,
+        advance: 0,
+        paymentStatus: "unpaid",
+        items: [{ id: 1, name: "", product: "", quantity: 1, price: 0, total: 0 }],
+        total: 0,
+        notes: "",
+      });
+      setLoading(false);
+      setClicked(confirm("Invoice saved successfully. Do you want to create another invoice?"));
+
     } catch (error) {
       console.error("Error saving invoice:", error);
       alert("Failed to save invoice. Please try again.");
     }
   };
+  if (loading) {
+    return (
+      <LoadingPage />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
