@@ -179,25 +179,78 @@ export const getTopSellingProducts = async () => {
       {
         $unwind: "$items",
       },
+      // Look up product details to get the category
+      {
+        $lookup: {
+          from: "products",
+          localField: "items.product",
+          foreignField: "_id",
+          as: "productDetails",
+        },
+      },
+      // Add a field for the product category
+      {
+        $addFields: {
+          productCategory: { $arrayElemAt: ["$productDetails.category", 0] },
+        },
+      },
       // Group by product ID
       {
         $group: {
-          _id: "$items.product", // This should match your items.product field
-          totalQuantity: { $sum: "$items.quantity" },
-          totalRevenue: { $sum: "$items.total" }, // Using the pre-calculated total
-          productName: { $first: "$items.name" }, // Get the product name from items
+          _id: "$items.product",
+          totalQuantity: { 
+        $sum: {
+          $cond: [
+            { $or: [
+          { $eq: [{ $toLower: "$productCategory" }, "bulk"] },
+          { $eq: [{ $toLower: "$productCategory" }, "tea bag"] }
+            ]},
+            "$items.quantity",
+            {
+          $cond: [
+            { $regexMatch: { input: "$productCategory", regex: /^Sample-(\d+)g$/i } },
+            { 
+              $divide: [
+            "$items.quantity", 
+            { $toInt: { $arrayElemAt: [{ $split: ["$productCategory", "-"] }, 1] } }
+              ]
+            },
+            {
+              $cond: [
+                        { $regexMatch: { input: "$productCategory", regex: /^(\d+)g$/i } },
+                        { 
+                          $multiply: [
+                            "$items.quantity",
+                            { 
+                              $toInt: { 
+                                $replaceAll: { 
+                                  input: "$productCategory", 
+                                  find: "g", 
+                                  replacement: "" 
+                                } 
+                              } 
+                            }
+                          ]
+                        },
+                        "$items.quantity" // Default case if no pattern matches
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          totalRevenue: { $sum: "$items.total" },
+          productName: { $first: "$items.name" },
         },
       },
-      // Sort by total quantity sold in descending order
-      {
-        $sort: { totalQuantity: -1 },
-      },
+      // Add product details for final output
       {
         $lookup: {
           from: "products",
           localField: "_id",
           foreignField: "_id",
-          as: "productDetails",
+          as: "productInfo",
         },
       },
       // Format the output
@@ -206,12 +259,25 @@ export const getTopSellingProducts = async () => {
           _id: 0,
           productId: "$_id",
           productName: 1,
-          category: { $arrayElemAt: ["$productDetails.category", 0] },
-          totalQuantity: 1,
+          category: { $arrayElemAt: ["$productInfo.category", 0] },
+          totalQuantity: {
+            $cond: [
+              {
+                $or: [
+                  { $eq: [{ $toLower: { $arrayElemAt: ["$productInfo.category", 0] } }, "bulk"] },
+                  { $eq: [{ $toLower: { $arrayElemAt: ["$productInfo.category", 0] } }, "tea bag"] }
+                ]
+              },
+              "$totalQuantity", // Keep original if bulk or tea bag
+              { $divide: ["$totalQuantity", 1000] } // Convert to kg otherwise
+            ]
+          },
           totalRevenue: 1,
-          // Include any additional fields from productDetails if needed
-          // productDescription: { $arrayElemAt: ['$productDetails.description', 0] }
         },
+      },
+      // Sort by total quantity sold in descending order
+      {
+        $sort: { totalQuantity: -1 },
       },
     ]);
     return invoices;
@@ -342,37 +408,92 @@ export const getProductSalesReport = async (req, res) => {
       },
       // Unwind the items array
       { $unwind: "$items" },
+      
+      // Lookup product details to get the category
+      {
+        $lookup: {
+          from: "products",
+          localField: "items.product",
+          foreignField: "_id",
+          as: "productDetails",
+        },
+      },
+      
+      // Add a field for the product category
+      {
+        $addFields: {
+          productCategory: { $arrayElemAt: ["$productDetails.category", 0] },
+        },
+      },
 
       // Group by product ID
       {
         $group: {
           _id: "$items.product",
-          productName: { $first: "$items.name" }, // Get product name from invoice items
-          totalQuantity: { $sum: "$items.quantity" },
+          productName: { $first: "$items.name" },
+          totalQuantity: { 
+            $sum: {
+              $divide: [
+                {
+                  $cond: [
+                    { $or: [
+                      { $eq: [{ $toLower: "$productCategory" }, "bulk"] },
+                      { $eq: [{ $toLower: "$productCategory" }, "tea bag"] }
+                    ]},
+                    { $multiply: ["$items.quantity", 1000] }, // Assuming 1kg (1000g) per unit
+                    {
+                      $cond: [
+                        { $regexMatch: { input: "$productCategory", regex: /^sample-(\d+)g$/i } },
+                        { 
+                          $multiply: [
+                            "$items.quantity", 
+                            { $toInt: { $arrayElemAt: [{ $split: ["$productCategory", "-"] }, 1] } }
+                          ]
+                        },
+                        {
+                          $cond: [
+                            { $regexMatch: { input: "$productCategory", regex: /^(\d+)g$/i } },
+                            { 
+                              $multiply: [
+                                "$items.quantity",
+                                { 
+                                  $toInt: { 
+                                    $replaceAll: { 
+                                      input: "$productCategory", 
+                                      find: "g", 
+                                      replacement: "" 
+                                    } 
+                                  } 
+                                }
+                              ]
+                            },
+                            { $multiply: ["$items.quantity", 1000] } // Default case if no pattern matches
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                1000 // Divide by 1000 to convert grams to kilograms
+              ]
+            }
+          },
           totalRevenue: { $sum: "$items.total" },
           totalInvoices: { $addToSet: "$_id" }, // Collect unique invoice IDs
+          category: { $first: "$productCategory" }, // Save category for projection
         },
       },
 
-      // Lookup product details
-      {
-        $lookup: {
-          from: "products",
-          localField: "_id",
-          foreignField: "_id",
-          as: "productDetails"
-        }
-      },
-      // Post-processing to count invoices
+      // Format the output
       {
         $project: {
           _id: 0,
           productId: "$_id",
           productName: 1,
-          category: { $arrayElemAt: ["$productDetails.category", 0] },
+          category: 1,
           totalQuantity: 1,
           totalRevenue: 1,
-          totalInvoices: { $size: "$totalInvoices" } // Count unique invoices
+          totalInvoices: { $size: "$totalInvoices" }, // Count unique invoices
         },
       },
 
@@ -384,7 +505,7 @@ export const getProductSalesReport = async (req, res) => {
     const totalStats = productSalesData.reduce(
       (acc, item) => {
         acc.totalRevenue += item.totalRevenue;
-        acc.totalQuantity += item.totalQuantity;
+        acc.totalQuantity += item.totalQuantity; // Now in kilograms
         acc.totalInvoices += item.totalInvoices;
         return acc;
       },
@@ -399,6 +520,7 @@ export const getProductSalesReport = async (req, res) => {
         startDate: dateFilter.$gte,
         endDate: dateFilter.$lte,
       },
+      unit: "kg" // Add this to indicate that quantities are in kilograms
     });
   } catch (error) {
     console.error("Error generating product sales report:", error);
