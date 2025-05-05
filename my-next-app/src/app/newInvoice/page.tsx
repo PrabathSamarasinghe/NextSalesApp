@@ -515,43 +515,43 @@ export default function InvoiceEntry(): JSX.Element {
                               )}
                             </select>
                           </td>
-                          <td className="px-4 py-3">
+                            <td className="px-4 py-3">
                             <input
                               type="number"
-                              min="1"
+                              step="0.01"
                               className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                               value={item.quantity}
                               onChange={(e) => {
-                                const selectedProduct = products.find(
-                                  (p) => p._id === item.product
-                                );
-                                const maxStock = selectedProduct?.stock || 1;
-                                const value = Math.min(
-                                  parseInt(e.target.value),
-                                  maxStock
-                                );
-                                updateItemField(item.id, "", "quantity", value);
+                              const selectedProduct = products.find(
+                                (p) => p._id === item.product
+                              );
+                              const maxStock = selectedProduct?.stock || 1;
+                              const value = Math.min(
+                                parseFloat(e.target.value) || 0,
+                                maxStock
+                              );
+                              updateItemField(item.id, "", "quantity", value);
                               }}
                               max={
-                                products.find((p) => p._id === item.product)
-                                  ?.stock || 1
+                              products.find((p) => p._id === item.product)
+                                ?.stock || 1
                               }
                             />
                             {item.product && (
                               <p
-                                className={`text-xs ${
-                                  (products.find((p) => p._id === item.product)
-                                    ?.stock ?? 0) > 20
-                                    ? "text-gray-500"
-                                    : "text-red-500"
-                                }`}
+                              className={`text-xs ${
+                                (products.find((p) => p._id === item.product)
+                                ?.stock ?? 0) > 20
+                                ? "text-gray-500"
+                                : "text-red-500"
+                              }`}
                               >
-                                Available:{" "}
-                                {products.find((p) => p._id === item.product)
-                                  ?.stock || 0}
+                              Available:{" "}
+                              {products.find((p) => p._id === item.product)
+                                ?.stock || 0}
                               </p>
                             )}
-                          </td>
+                            </td>
                           <td className="px-4 py-3">
                             <input
                               type="number"
