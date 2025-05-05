@@ -8,6 +8,7 @@ const RecievedInvoiceSchema = new mongoose.Schema({
     invoiceNumber: {
         type: String,
         required: true,
+        unique: true,
     },
     supplier: {
         type: String,
