@@ -210,13 +210,13 @@ export default function TopSellingProductsPage() {
                   className={`px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer ${getClassNamesFor('totalQuantity')}`}
                   onClick={() => requestSort('totalQuantity')}
                 >
-                  Quantity Sold
+                  Quantity Sold (kg)
                 </th>
                 <th 
                   className={`px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer ${getClassNamesFor('totalRevenue')}`}
                   onClick={() => requestSort('totalRevenue')}
                 >
-                  Revenue
+                  Revenue (Rs.)
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Performance
@@ -238,7 +238,7 @@ export default function TopSellingProductsPage() {
                     {product.totalQuantity.toLocaleString()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-green-600 font-medium">
-                    Rs. {product.totalRevenue.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,')}
+                     {product.totalRevenue.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,')}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="w-full bg-gray-200 rounded-full h-2.5">

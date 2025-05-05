@@ -7,10 +7,9 @@ export const createInvoice = async (invoiceData) => {
     await connectDB();
     await Promise.all(
       invoiceData.items.map(async (item) => {
-        await Product.findByIdAndUpdate(
-          item.product,
-          { $inc: { stock: -item.quantity } }
-        );
+        await Product.findByIdAndUpdate(item.product, {
+          $inc: { stock: -item.quantity },
+        });
       })
     );
     const invoice = new Invoice(invoiceData);
@@ -198,47 +197,110 @@ export const getTopSellingProducts = async () => {
       {
         $group: {
           _id: "$items.product",
-          totalQuantity: { 
-        $sum: {
-          $cond: [
-            { $or: [
-          { $eq: [{ $toLower: "$productCategory" }, "bulk"] },
-          { $eq: [{ $toLower: "$productCategory" }, "tea bag"] }
-            ]},
-            "$items.quantity",
-            {
-          $cond: [
-            { $regexMatch: { input: "$productCategory", regex: /^Sample-(\d+)g$/i } },
-            { 
+          totalQuantity: {
+            $sum: {
               $divide: [
-            "$items.quantity", 
-            { $toInt: { $arrayElemAt: [{ $split: ["$productCategory", "-"] }, 1] } }
-              ]
-            },
-            {
-              $cond: [
-                        { $regexMatch: { input: "$productCategory", regex: /^(\d+)g$/i } },
-                        { 
+                {
+                  $cond: [
+                    // Case 1: bulk → 1000g
+                    {
+                      $or: [
+                        { $eq: [{ $toLower: "$productCategory" }, "bulk"] },
+                        { $eq: [{ $toLower: "$productCategory" }, "550g/l"] },
+                      ],
+                    },
+                    { $multiply: ["$items.quantity", 1000] },
+
+                    // Case 2: sample Xg (e.g., "sample 20g")
+                    {
+                      $cond: [
+                        {
+                          $regexMatch: {
+                            input: "$productCategory",
+                            regex: /^sample \d+g$/i,
+                          },
+                        },
+                        {
                           $multiply: [
                             "$items.quantity",
-                            { 
-                              $toInt: { 
-                                $replaceAll: { 
-                                  input: "$productCategory", 
-                                  find: "g", 
-                                  replacement: "" 
-                                } 
-                              } 
-                            }
-                          ]
+                            {
+                              $toInt: {
+                                $replaceAll: {
+                                  input: {
+                                    $arrayElemAt: [
+                                      { $split: ["$productCategory", " "] },
+                                      1,
+                                    ],
+                                  },
+                                  find: "g",
+                                  replacement: "",
+                                },
+                              },
+                            },
+                          ],
                         },
-                        "$items.quantity" // Default case if no pattern matches
-                      ]
-                    }
-                  ]
-                }
-              ]
-            }
+
+                        // Case 3: Xg (e.g., "250g")
+                        {
+                          $cond: [
+                            {
+                              $regexMatch: {
+                                input: "$productCategory",
+                                regex: /^\d+g$/i,
+                              },
+                            },
+                            {
+                              $multiply: [
+                                "$items.quantity",
+                                {
+                                  $toInt: {
+                                    $replaceAll: {
+                                      input: "$productCategory",
+                                      find: "g",
+                                      replacement: "",
+                                    },
+                                  },
+                                },
+                              ],
+                            },
+
+                            // Case 4: sample (no weight) → assume 1000g
+                            {
+                              $cond: [
+                                {
+                                  $eq: [
+                                    { $toLower: "$productCategory" },
+                                    "sample",
+                                  ],
+                                },
+                                { $multiply: ["$items.quantity", 1000] },
+
+                                // Case 5: tea bag → 2g
+                                {
+                                  $cond: [
+                                    {
+                                      $eq: [
+                                        { $toLower: "$productCategory" },
+                                        "tea bag",
+                                      ],
+                                    },
+                                    { $multiply: ["$items.quantity", 2] },
+
+                                    // Default
+                                    "$items.quantity",
+                                  ],
+                                },
+                              ],
+                            },
+                          ],
+                        },
+                      ],
+                    },
+                  ],
+                },
+                1000, // convert g to kg
+              ],
+            },
           },
           totalRevenue: { $sum: "$items.total" },
           productName: { $first: "$items.name" },
@@ -264,13 +326,31 @@ export const getTopSellingProducts = async () => {
             $cond: [
               {
                 $or: [
-                  { $eq: [{ $toLower: { $arrayElemAt: ["$productInfo.category", 0] } }, "bulk"] },
-                  { $eq: [{ $toLower: { $arrayElemAt: ["$productInfo.category", 0] } }, "tea bag"] }
-                ]
+                  {
+                    $eq: [
+                      {
+                        $toLower: {
+                          $arrayElemAt: ["$productInfo.category", 0],
+                        },
+                      },
+                      "bulk",
+                    ],
+                  },
+                  {
+                    $eq: [
+                      {
+                        $toLower: {
+                          $arrayElemAt: ["$productInfo.category", 0],
+                        },
+                      },
+                      "tea bag",
+                    ],
+                  },
+                ],
               },
               "$totalQuantity", // Keep original if bulk or tea bag
-              { $divide: ["$totalQuantity", 1000] } // Convert to kg otherwise
-            ]
+              { $divide: ["$totalQuantity", 1] }, // Convert to kg otherwise
+            ],
           },
           totalRevenue: 1,
         },
@@ -408,7 +488,7 @@ export const getProductSalesReport = async (req, res) => {
       },
       // Unwind the items array
       { $unwind: "$items" },
-      
+
       // Lookup product details to get the category
       {
         $lookup: {
@@ -418,7 +498,7 @@ export const getProductSalesReport = async (req, res) => {
           as: "productDetails",
         },
       },
-      
+
       // Add a field for the product category
       {
         $addFields: {
@@ -431,52 +511,110 @@ export const getProductSalesReport = async (req, res) => {
         $group: {
           _id: "$items.product",
           productName: { $first: "$items.name" },
-          totalQuantity: { 
+          totalQuantity: {
             $sum: {
               $divide: [
                 {
                   $cond: [
-                    { $or: [
-                      { $eq: [{ $toLower: "$productCategory" }, "bulk"] },
-                      { $eq: [{ $toLower: "$productCategory" }, "tea bag"] }
-                    ]},
-                    { $multiply: ["$items.quantity", 1000] }, // Assuming 1kg (1000g) per unit
+                    // Case 1: bulk or 550g/l → 1000g per unit
+                    {
+                      $or: [
+                        { $eq: [{ $toLower: "$productCategory" }, "bulk"] },
+                        { $eq: [{ $toLower: "$productCategory" }, "550g/l"] },
+                      ],
+                    },
+                    { $multiply: ["$items.quantity", 1000] },
+
+                    // Case 2: sample Xg (e.g., "sample 20g")
                     {
                       $cond: [
-                        { $regexMatch: { input: "$productCategory", regex: /^sample-(\d+)g$/i } },
-                        { 
-                          $multiply: [
-                            "$items.quantity", 
-                            { $toInt: { $arrayElemAt: [{ $split: ["$productCategory", "-"] }, 1] } }
-                          ]
+                        {
+                          $regexMatch: {
+                            input: "$productCategory",
+                            regex: /^sample \d+g$/i,
+                          },
                         },
                         {
+                          $multiply: [
+                            "$items.quantity",
+                            {
+                              $toInt: {
+                                $replaceAll: {
+                                  input: {
+                                    $arrayElemAt: [
+                                      { $split: ["$productCategory", " "] },
+                                      1,
+                                    ],
+                                  },
+                                  find: "g",
+                                  replacement: "",
+                                },
+                              },
+                            },
+                          ],
+                        },
+
+                        // Case 3: Xg (e.g., "250g")
+                        {
                           $cond: [
-                            { $regexMatch: { input: "$productCategory", regex: /^(\d+)g$/i } },
-                            { 
+                            {
+                              $regexMatch: {
+                                input: "$productCategory",
+                                regex: /^\d+g$/i,
+                              },
+                            },
+                            {
                               $multiply: [
                                 "$items.quantity",
-                                { 
-                                  $toInt: { 
-                                    $replaceAll: { 
-                                      input: "$productCategory", 
-                                      find: "g", 
-                                      replacement: "" 
-                                    } 
-                                  } 
-                                }
-                              ]
+                                {
+                                  $toInt: {
+                                    $replaceAll: {
+                                      input: "$productCategory",
+                                      find: "g",
+                                      replacement: "",
+                                    },
+                                  },
+                                },
+                              ],
                             },
-                            { $multiply: ["$items.quantity", 1000] } // Default case if no pattern matches
-                          ]
-                        }
-                      ]
-                    }
-                  ]
+
+                            // Case 4: sample → assume 1000g
+                            {
+                              $cond: [
+                                {
+                                  $eq: [
+                                    { $toLower: "$productCategory" },
+                                    "sample",
+                                  ],
+                                },
+                                { $multiply: ["$items.quantity", 1000] },
+
+                                // ✅ Case 5: tea bag → assume 2g per unit
+                                {
+                                  $cond: [
+                                    {
+                                      $eq: [
+                                        { $toLower: "$productCategory" },
+                                        "tea bag",
+                                      ],
+                                    },
+                                    { $multiply: ["$items.quantity", 2] },
+
+                                    // Default: use raw quantity
+                                    "$items.quantity",
+                                  ],
+                                },
+                              ],
+                            },
+                          ],
+                        },
+                      ],
+                    },
+                  ],
                 },
-                1000 // Divide by 1000 to convert grams to kilograms
-              ]
-            }
+                1000, // Convert grams to kilograms
+              ],
+            },
           },
           totalRevenue: { $sum: "$items.total" },
           totalInvoices: { $addToSet: "$_id" }, // Collect unique invoice IDs
@@ -520,7 +658,7 @@ export const getProductSalesReport = async (req, res) => {
         startDate: dateFilter.$gte,
         endDate: dateFilter.$lte,
       },
-      unit: "kg" // Add this to indicate that quantities are in kilograms
+      unit: "kg", // Add this to indicate that quantities are in kilograms
     });
   } catch (error) {
     console.error("Error generating product sales report:", error);
@@ -535,26 +673,26 @@ export const getProductSalesReport = async (req, res) => {
 export const customerSummary = async (customerId) => {
   try {
     await connectDB();
-    
+
     // Find all non-cancelled invoices for this customer
-    const invoices = await Invoice.find({ 
+    const invoices = await Invoice.find({
       customer: customerId,
-      isCancelled: false 
-    }).populate('items.product');
-    
+      isCancelled: false,
+    }).populate("items.product");
+
     // Initialize an object to store product summary
     const productSummaryMap = {};
-    
+
     // Process all invoices and their items
-    invoices.forEach(invoice => {
-      invoice.items.forEach(item => {
+    invoices.forEach((invoice) => {
+      invoice.items.forEach((item) => {
         const productId = item.product._id.toString();
-        
+
         // If the product is already in our map, update quantities and totals
         if (productSummaryMap[productId]) {
           productSummaryMap[productId].quantity += item.quantity;
           productSummaryMap[productId].totalSpent += item.total;
-        } 
+        }
         // Otherwise, create a new entry for this product
         else {
           productSummaryMap[productId] = {
@@ -564,33 +702,43 @@ export const customerSummary = async (customerId) => {
             totalSpent: item.total,
             // If you have product category in your model, you can include it here
             category: item.product.category || "N/A",
-            averagePrice: item.price
+            averagePrice: item.price,
           };
         }
       });
     });
-    
+
     // Convert the map to an array
     const productSummary = Object.values(productSummaryMap);
-    
+
     // Calculate additional metrics for each product
-    productSummary.forEach(product => {
+    productSummary.forEach((product) => {
       product.averagePrice = product.totalSpent / product.quantity;
     });
-    
+
     // Calculate overall totals
     const totalInvoices = invoices.length;
-    const totalSpent = invoices.reduce((sum, invoice) => sum + invoice.total, 0);
-    const totalItemsPurchased = productSummary.reduce((sum, product) => sum + product.quantity, 0);
-    
+    const totalSpent = invoices.reduce(
+      (sum, invoice) => sum + invoice.total,
+      0
+    );
+    const totalItemsPurchased = productSummary.reduce(
+      (sum, product) => sum + product.quantity,
+      0
+    );
+
     // Get the latest purchase date
-    const latestInvoice = invoices.length > 0 ? 
-      invoices.reduce((latest, invoice) => {
-        return new Date(invoice.date) > new Date(latest.date) ? invoice : latest;
-      }, invoices[0]) : null;
-    
+    const latestInvoice =
+      invoices.length > 0
+        ? invoices.reduce((latest, invoice) => {
+            return new Date(invoice.date) > new Date(latest.date)
+              ? invoice
+              : latest;
+          }, invoices[0])
+        : null;
+
     const latestPurchaseDate = latestInvoice ? latestInvoice.date : null;
-    
+
     return {
       status: 200,
       data: {
@@ -598,12 +746,11 @@ export const customerSummary = async (customerId) => {
           totalInvoices,
           totalSpent,
           totalItemsPurchased,
-          latestPurchaseDate
+          latestPurchaseDate,
         },
-        productSummary: productSummary.sort((a, b) => b.quantity - a.quantity) // Sort by quantity in descending order
-      }
+        productSummary: productSummary.sort((a, b) => b.quantity - a.quantity), // Sort by quantity in descending order
+      },
     };
-    
   } catch (error) {
     console.error("Error in customerSummary:", error);
     return {

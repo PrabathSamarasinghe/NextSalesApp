@@ -28,15 +28,14 @@ export default function ProductsPage() {
 
   useLayoutEffect(() => {
     const fetchRole = async () => {
-      try{
-
+      try {
         const response = await fetch("/api/admin/auth");
         const data = await response.json();
-        setRole(data.decoded.role)
-      }catch(error){
+        setRole(data.decoded.role);
+      } catch (error) {
         console.error("Error fetching role:", error);
       }
-    }
+    };
     const fetchProducts = async () => {
       try {
         const response = await fetch("/api/product/all", {
@@ -78,7 +77,6 @@ export default function ProductsPage() {
     }
   };
 
-
   const lastPostIndex = currentPage * itemsPerPage;
   const firstPostIndex = lastPostIndex - itemsPerPage;
   const currentPosts = products.slice(firstPostIndex, lastPostIndex);
@@ -107,47 +105,48 @@ export default function ProductsPage() {
             <FileText size={18} className="mr-2" />
             Received Invoices
           </button>
-         {role === "admin" &&
-          <button
-            className="inline-flex items-center px-4 py-2.5 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-200 shadow-sm hover:shadow-md"
-            onClick={() => {
+          {role === "admin" && (
+            <button
+              className="inline-flex items-center px-4 py-2.5 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-200 shadow-sm hover:shadow-md"
+              onClick={() => {
                 navigate.push("/received-invoice");
               }}
-              >
+            >
               <Plus size={18} className="mr-2" />
               Add Products
-              </button>}
-            </div>
-            </div>
-            <div className="flex items-center mb-6">
-            <button
-              className="flex items-center text-gray-600 hover:text-blue-600"
-              onClick={() => navigate.push("/dashboard")}
-            >
-              <ArrowLeft size={20} className="mr-2" />
-              <span>Back to Dashboard</span>
             </button>
-            </div>
+          )}
+        </div>
+      </div>
+      <div className="flex items-center mb-6">
+        <button
+          className="flex items-center text-gray-600 hover:text-blue-600"
+          onClick={() => navigate.push("/dashboard")}
+        >
+          <ArrowLeft size={20} className="mr-2" />
+          <span>Back to Dashboard</span>
+        </button>
+      </div>
 
-            <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-            <div className="relative mb-6">
-              <Search
-              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-              size={18}
-              />
-              <input
-              type="text"
-              placeholder="Search products by name, SKU, or category..."
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
+      <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+        <div className="relative mb-6">
+          <Search
+            className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+            size={18}
+          />
+          <input
+            type="text"
+            placeholder="Search products by name, SKU, or category..."
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
 
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200 text-center">
-              <thead className="bg-gray-50">
-                <tr>
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200 text-center">
+            <thead className="bg-gray-50">
+              <tr>
                 <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Product Name
                 </th>
@@ -158,7 +157,7 @@ export default function ProductsPage() {
                   Price
                 </th>
                 <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                 Entire Stock
+                  Entire Stock
                 </th>
                 <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Available Stock
@@ -166,78 +165,111 @@ export default function ProductsPage() {
                 <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Stock Validation
                 </th>
-                {role === "admin" && <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>}
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredProducts.map((product) => (
+                {role === "admin" && (
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
+                )}
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {filteredProducts.map((product) => (
                 <tr key={product._id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                  {product.name}
+                    {product.name}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {product.category}
+                    {product.category}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  Rs.{product.price.toFixed(2)}
+                    Rs.{product.price.toFixed(2)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {product.entireStock}
+                    {product.entireStock}
+                    <span className="text-gray-400 text-xs font-bold">
+                      {" "}
+                      (
+                        {(product.category.toLowerCase() === "bulk" || product.category.toLowerCase() === "550g/l")
+                    ? `${product.entireStock} kg`
+                    : product.category.toLowerCase() === "tea bag"
+                    ? `${((product.entireStock * 2) / 1000).toFixed(2)} kg`
+                    : product.category.toLowerCase() === "sample 20g"
+                    ? `${((product.entireStock * 20) / 1000).toFixed(2)} kg`
+                    : `${((product.entireStock * Number(product.category.split("g")[0])) / 1000).toFixed(2)} kg`}
+                      )
+                    </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {product.stock}
+                    {product.stock}
+                    <span className="text-gray-400 text-xs font-bold">
+                      {" "}
+                      (
+                        {(product.category.toLowerCase() === "bulk" || product.category.toLowerCase() === "550g/l")
+                    ? `${product.stock} kg`
+                    : product.category.toLowerCase() === "tea bag"
+                    ? `${((product.stock * 2) / 1000).toFixed(2)} kg`
+                    : product.category.toLowerCase() === "sample 20g"
+                    ? `${((product.stock * 20) / 1000).toFixed(2)} kg`
+                    : `${((product.stock * Number(product.category.split("g")[0])) / 1000).toFixed(2)} kg`}
+                      )
+                    </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {product.stock > 0
-                    ? product.stock * product.price
-                    : "Out of Stock"}
+                    {product.stock > 0
+                      ? product.stock * product.price
+                      : "Out of Stock"}
+                    
                   </td>
-                  {role === "admin" && <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <button
-                    className="text-blue-600 hover:text-blue-900 mr-3"
-                    onClick={() => {
-                        setIsUpdateModalOpen(true);
-                        setProductToUpdate(product);
-                      }}
-                    >
-                      <Edit size={18} />
-                    </button>
-                    <button
-                      className="text-red-600 hover:text-red-900"
-                      onClick={async () => {
-                        if (confirm(
-                          "Are you sure you want to delete this product? This action cannot be undone.")){
-                        await fetch(`/api/product/delete`, {
-                          method: "DELETE",
-                          headers: {
-                            "Content-Type": "application/json",
-                          },
-                          body: JSON.stringify({ id: product._id }),
-                        })
-                          .then((res) => {
-                            if (res.ok) {
-                              setProducts((prevProducts) =>
-                                prevProducts.filter(
-                                  (p) => p._id !== product._id
-                                )
-                              );
-                            } else {
-                              console.error(
-                                "Error deleting product:",
-                                res.statusText
-                              );
-                            }
-                          })
-                          .catch((error) => {
-                            console.error("Error deleting product:", error);
-                          });
-                      }}}
-                    >
-                      <Trash2 size={18} />
-                    </button>
-                  </td>}
+                  {role === "admin" && (
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <button
+                        className="text-blue-600 hover:text-blue-900 mr-3"
+                        onClick={() => {
+                          setIsUpdateModalOpen(true);
+                          setProductToUpdate(product);
+                        }}
+                      >
+                        <Edit size={18} />
+                      </button>
+                      <button
+                        className="text-red-600 hover:text-red-900"
+                        onClick={async () => {
+                          if (
+                            confirm(
+                              "Are you sure you want to delete this product? This action cannot be undone."
+                            )
+                          ) {
+                            await fetch(`/api/product/delete`, {
+                              method: "DELETE",
+                              headers: {
+                                "Content-Type": "application/json",
+                              },
+                              body: JSON.stringify({ id: product._id }),
+                            })
+                              .then((res) => {
+                                if (res.ok) {
+                                  setProducts((prevProducts) =>
+                                    prevProducts.filter(
+                                      (p) => p._id !== product._id
+                                    )
+                                  );
+                                } else {
+                                  console.error(
+                                    "Error deleting product:",
+                                    res.statusText
+                                  );
+                                }
+                              })
+                              .catch((error) => {
+                                console.error("Error deleting product:", error);
+                              });
+                          }
+                        }}
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>

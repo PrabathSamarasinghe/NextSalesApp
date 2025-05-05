@@ -232,7 +232,9 @@ export default function ProductSalesReport() {
                       Total Kilos Sold
                     </h3>
                     <p className="text-2xl font-bold text-green-900">
-                      {totalQuantity}
+                      {(Number(totalQuantity)).toLocaleString("en-US", {
+                        minimumFractionDigits: 0,
+                      })}{" "}kg
                     </p>
                   </div>
                 </div>
@@ -347,10 +349,10 @@ export default function ProductSalesReport() {
                         Product
                       </th>
                       <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Quantity Sold
+                        Quantity Sold (kg)
                       </th>
                       <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Total Revenue
+                        Total Revenue (LKR)
                       </th>
                       <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Invoices
@@ -391,7 +393,7 @@ export default function ProductSalesReport() {
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">
-                            {product.totalQuantity} kgs
+                            {product.totalQuantity}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium text-gray-900">
                             {formatCurrency(product.totalRevenue)}
