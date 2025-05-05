@@ -216,7 +216,7 @@ export default function ProductsPage() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {product.stock > 0
-                      ? product.stock * product.price
+                      ? Number(product.stock * product.price).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,')
                       : "Out of Stock"}
                     
                   </td>
