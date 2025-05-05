@@ -163,7 +163,7 @@ export default function ProductsPage() {
                   Available Stock
                 </th>
                 <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Stock Validation
+                  Stock Validation (Rs.)
                 </th>
                 {role === "admin" && (
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
