@@ -229,7 +229,7 @@ export default function ProductSalesReport() {
                   </div>
                   <div className="ml-4">
                     <h3 className="text-sm font-medium text-green-600">
-                      Total Units Sold
+                      Total Kilos Sold
                     </h3>
                     <p className="text-2xl font-bold text-green-900">
                       {totalQuantity}
