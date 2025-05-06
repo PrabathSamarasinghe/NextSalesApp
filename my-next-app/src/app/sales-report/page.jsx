@@ -403,7 +403,7 @@ export default function ProductSalesReport() {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500">
                             {formatCurrency(
-                              product.totalRevenue / product.totalQuantity
+                              product.totalRevenue / (product.totalQuantity > 1 ? product.totalQuantity : 1)
                             )}
                           </td>
                         </tr>
