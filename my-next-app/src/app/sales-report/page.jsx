@@ -405,6 +405,7 @@ export default function ProductSalesReport() {
                             {formatCurrency(
                               product.totalRevenue / (product.totalQuantity > 1 ? product.totalQuantity : product.totalQuantity*1000)
                             )}
+                            {product.totalQuantity > 1 ? "/kg" : "/g"}
                           </td>
                         </tr>
                       ))
