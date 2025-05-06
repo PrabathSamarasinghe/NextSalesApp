@@ -3,8 +3,10 @@ import { useState, useLayoutEffect } from "react";
 import { Plus, Search, Edit, Trash2, ArrowLeft, FileText } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Pagination from "@/components/Pagination";
+import LoadingPage from '@/components/loadingPage';
 
 export default function ProductsPage() {
+  const [loading, setLoading] = useState(true);
   const [role, setRole] = useState(); // Replace with actual role fetching logic
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -46,6 +48,7 @@ export default function ProductsPage() {
         });
         const data = await response.json();
         setProducts(data);
+        setLoading(false);
       } catch (error) {
         console.error("Error fetching products:", error);
       }
@@ -88,6 +91,10 @@ export default function ProductsPage() {
           product.category.toLowerCase().includes(searchTerm.toLowerCase())
       )
     : currentPosts;
+
+  if (loading) {
+    return <LoadingPage />;
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -189,13 +196,18 @@ export default function ProductsPage() {
                     <span className="text-gray-400 text-xs font-bold">
                       {" "}
                       (
-                        {(product.category.toLowerCase() === "bulk" || product.category.toLowerCase() === "550g/l")
-                    ? `${product.entireStock} kg`
-                    : product.category.toLowerCase() === "tea bag"
-                    ? `${((product.entireStock * 2) / 1000).toFixed(2)} kg`
-                    : product.category.toLowerCase() === "sample 20g"
-                    ? `${((product.entireStock * 20) / 1000).toFixed(2)} kg`
-                    : `${((product.entireStock * Number(product.category.split("g")[0])) / 1000).toFixed(2)} kg`}
+                      {product.category.toLowerCase() === "bulk" ||
+                      product.category.toLowerCase() === "550g/l"
+                        ? `${product.entireStock} kg`
+                        : product.category.toLowerCase() === "tea bag"
+                        ? `${((product.entireStock * 2) / 1000).toFixed(2)} kg`
+                        : product.category.toLowerCase() === "sample 20g"
+                        ? `${((product.entireStock * 20) / 1000).toFixed(2)} kg`
+                        : `${(
+                            (product.entireStock *
+                              Number(product.category.split("g")[0])) /
+                            1000
+                          ).toFixed(2)} kg`}
                       )
                     </span>
                   </td>
@@ -204,21 +216,27 @@ export default function ProductsPage() {
                     <span className="text-gray-400 text-xs font-bold">
                       {" "}
                       (
-                        {(product.category.toLowerCase() === "bulk" || product.category.toLowerCase() === "550g/l")
-                    ? `${product.stock} kg`
-                    : product.category.toLowerCase() === "tea bag"
-                    ? `${((product.stock * 2) / 1000).toFixed(2)} kg`
-                    : product.category.toLowerCase() === "sample 20g"
-                    ? `${((product.stock * 20) / 1000).toFixed(2)} kg`
-                    : `${((product.stock * Number(product.category.split("g")[0])) / 1000).toFixed(2)} kg`}
+                      {product.category.toLowerCase() === "bulk" ||
+                      product.category.toLowerCase() === "550g/l"
+                        ? `${product.stock} kg`
+                        : product.category.toLowerCase() === "tea bag"
+                        ? `${((product.stock * 2) / 1000).toFixed(2)} kg`
+                        : product.category.toLowerCase() === "sample 20g"
+                        ? `${((product.stock * 20) / 1000).toFixed(2)} kg`
+                        : `${(
+                            (product.stock *
+                              Number(product.category.split("g")[0])) /
+                            1000
+                          ).toFixed(2)} kg`}
                       )
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {product.stock > 0
-                      ? Number(product.stock * product.price).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,')
+                      ? Number(product.stock * product.price)
+                          .toFixed(2)
+                          .replace(/\d(?=(\d{3})+\.)/g, "$&,")
                       : "Out of Stock"}
-                    
                   </td>
                   {role === "admin" && (
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">

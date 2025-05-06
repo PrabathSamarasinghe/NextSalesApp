@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 
 import AddCustomer from '@/components/AddCustomer';
 import Pagination from '@/components/Pagination';
+import LoadingPage from '@/components/loadingPage';
 
 interface CustomerDetails {
   name: string;
@@ -32,6 +33,7 @@ export default function CustomerList() {
   const navigate = useRouter(); // useRouter from next/navigation
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(6);
+  const [loading, setLoading] = useState(false); // Loading state for customer data
   // State for new customer form
 //   const loadingContext = useContext(LoadingContext);
   
@@ -39,6 +41,7 @@ export default function CustomerList() {
 
   useLayoutEffect(() => {
     const fetchRole = async () => {
+      setLoading(true); // Set loading to true when fetching role
       try{
 
         const response = await fetch("/api/admin/auth");
@@ -70,6 +73,7 @@ export default function CustomerList() {
                     }
                 }));
             setCustomers(totals);
+            setLoading(false); // Set loading to false after fetching customers
         }
         catch (error) {
             console.error('Error fetching customers:', error);
@@ -132,6 +136,12 @@ export default function CustomerList() {
   const viewCustomerDetails = (customerId: string) => {
     navigate.push(`/customerdata/${customerId}`);
   };
+
+  if (loading) {
+      return (
+        <LoadingPage />
+      );
+    }
 
   return (
     <div className="container mx-auto px-4 py-8">

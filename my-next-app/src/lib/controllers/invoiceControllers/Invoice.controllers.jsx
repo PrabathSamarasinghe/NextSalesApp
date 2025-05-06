@@ -58,9 +58,39 @@ export const deleteInvoice = async (invoiceId) => {
 export const getInvoicesOfCustomer = async (customerId) => {
   try {
     await connectDB();
-    const invoices = await Invoice.find({ customer: customerId }).exec();
-    return { status: 200, invoices };
+    // Get all invoices for this customer
+    const invoices = await Invoice.find({ customer: customerId }).lean().exec();
+    
+    // Process each invoice to add categories to items
+    const processedInvoices = await Promise.all(
+      invoices.map(async (invoice) => {
+        // Process items for each invoice
+        const processedItems = await Promise.all(
+          invoice.items.map(async (item) => {
+            const product = await Product.findById(item.product).lean();
+            if (!product) {
+              return item; // Handle case where product might not exist
+            }
+            
+            // Create a new object with item properties and category
+            return {
+              ...item,
+              category: product.category
+            };
+          })
+        );
+        
+        // Return the invoice with processed items
+        return {
+          ...invoice,
+          items: processedItems
+        };
+      })
+    );
+    
+    return { status: 200, invoices: processedInvoices };
   } catch (error) {
+    console.error("Error fetching customer invoices:", error);
     return {
       status: 500,
       message: error.message,
@@ -372,12 +402,31 @@ export const getTopSellingProducts = async () => {
 export const getInvoiceById = async (id) => {
   try {
     await connectDB();
-    const invoice = await Invoice.findById(id);
+    // Use lean() for better performance when you just need the data
+    const invoice = await Invoice.findById(id).lean();
     if (!invoice) {
       throw new Error("Invoice not found");
     }
+    
+    // Map over items array and add category
+    invoice.items = await Promise.all(
+      invoice.items.map(async (item) => {
+        const product = await Product.findById(item.product).lean();
+        if (!product) {
+          return item; // Handle case where product might not exist
+        }
+        
+        // Create a new object with item properties and category
+        return {
+          ...item,
+          category: product.category
+        };
+      })
+    );
+    
     return invoice;
   } catch (error) {
+    console.error("Error fetching invoice:", error);
     return {
       status: 500,
       message: error.message,

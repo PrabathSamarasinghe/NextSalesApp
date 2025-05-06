@@ -14,14 +14,38 @@ export const getRecievedInvoices = async () => {
 }
 
 export const getRecievedInvoiceById = async (id) => {
-    try {
+  try {
       await connectDB();
-        const invoice = await RecievedInvoice.findById(id);
-        return invoice;
-    } catch (error) {
-        console.error("Error fetching recieved invoice by ID:", error);
-        throw new Error("Failed to fetch recieved invoice by ID");
-    }
+      // Use lean() to get plain JavaScript objects instead of Mongoose documents
+      const invoice = await RecievedInvoice.findById(id).lean();
+      
+      if (!invoice) {
+          throw new Error("Received invoice not found");
+      }
+      
+      invoice.items = await Promise.all(
+          invoice.items.map(async (item) => {
+              const product = await Product.findById(item.product).lean();
+              if (!product) {
+                  return item; // Handle case where product might not exist
+              }
+              
+              // Convert the item to a plain object if it's not already
+              const plainItem = item.toObject ? item.toObject() : item;
+              
+              // Create a new object with item properties and category
+              return {
+                  ...plainItem,
+                  category: product.category
+              };
+          })
+      );
+      
+      return invoice;
+  } catch (error) {
+      console.error("Error fetching received invoice by ID:", error);
+      throw new Error("Failed to fetch received invoice by ID");
+  }
 }
 
 export const createRecievedInvoice = async (invoiceData) => {

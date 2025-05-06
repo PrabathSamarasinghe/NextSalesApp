@@ -11,12 +11,14 @@ import {
 import { useRouter } from "next/navigation";
 import Pagination from "@/components/Pagination";
 import Link from "next/link";
+import LoadingPage from "@/components/loadingPage";
 
 interface InvoiceItem {
   id: number;
   name: string;
   product: string;
   quantity: number;
+  category: string;
   price: number;
   total: number;
 }
@@ -33,6 +35,7 @@ interface ReceivedInvoiceStructure {
 
 export default function ReceivedInvoicesList() {
   const [role, setRole] = useState<string>(); // Replace with actual role fetching logic
+  const [loading, setLoading] = useState(true);
   const [invoicesStructure, setInvoicesStructure] = useState<
     ReceivedInvoiceStructure[]
   >([]);
@@ -77,6 +80,7 @@ export default function ReceivedInvoicesList() {
         setInvoicesStructure([]); // Set to empty array on error
       } finally {
         setIsLoading(false);
+        setLoading(false); // Set loading to false after fetching invoices
       }
     };
     fetchRole();
@@ -164,6 +168,9 @@ export default function ReceivedInvoicesList() {
       console.error("Error fetching invoice details:", error);
     }
   };
+    if (loading) {
+      return <LoadingPage />;
+    }
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -416,6 +423,9 @@ export default function ReceivedInvoicesList() {
                       <tr key={index}>
                         <td className="px-6 py-4 text-sm text-gray-900">
                           {item.name}
+                          <span className="text-gray-50 bg-gray-400 text-xs ml-2 row-auto px-2 py-1 rounded-[10px]">
+                            {item.category}
+                          </span>
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-500 text-right">
                           {item.quantity}

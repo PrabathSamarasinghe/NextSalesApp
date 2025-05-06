@@ -27,6 +27,7 @@ interface CustomerDetails {
 interface InvoiceItem {
   name: string;
   quantity: number;
+  category: string;
   price: number;
 }
 
@@ -634,6 +635,9 @@ export default function InvoicesList() {
                       <tr key={index}>
                         <td className="px-6 py-4 text-sm text-gray-900">
                           {item.name}
+                          <span className="text-gray-50 bg-gray-400 text-xs ml-2 row-auto px-2 py-1 rounded-[10px]">
+                            {item.category}
+                          </span>
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-500 text-right">
                           {item.quantity}

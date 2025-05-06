@@ -14,12 +14,12 @@ export default function EnhancedLoadingScreen() {
   }, []);
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-white">
       {/* Main loader container */}
       <div className="relative">
         {/* Outer pulsing circle */}
         <div 
-          className="absolute inset-0 rounded-full bg-blue-100 animate-ping"
+          className="absolute inset-0 rounded-full bg-gray-100 animate-ping"
           style={{ 
             opacity: opacity,
             animationDuration: '2s',
@@ -28,7 +28,7 @@ export default function EnhancedLoadingScreen() {
         
         {/* Spinning loader */}
         <svg
-          className="relative z-10 animate-spin h-16 w-16 text-blue-600"
+          className="relative z-10 animate-spin h-16 w-16 text-gray-400"
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 24 24"
         >
@@ -50,7 +50,7 @@ export default function EnhancedLoadingScreen() {
       </div>
       
       {/* Loading text */}
-      <div className="mt-6 text-blue-800 font-medium text-lg tracking-wider">
+      <div className="mt-6 text-gray-600 font-medium text-lg tracking-wider">
         <span className="inline-block animate-pulse">Loading</span>
         <span className="inline-block ml-1 animate-bounce delay-100">.</span>
         <span className="inline-block ml-1 animate-bounce delay-200">.</span>

@@ -14,6 +14,7 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import AddCustomer from "@/components/AddCustomer";
+import LoadingPage from "@/components/loadingPage";
 
 
 interface Stats {
@@ -60,6 +61,8 @@ export default function Dashboard() {
   const [topProducts, setTopProducts] = useState<TopProduct[]>([]);
 
   const router = useRouter();
+
+  const [loading, setLoading] = useState(true);
 
   useLayoutEffect(() => {
     const fetchRole = async () => {
@@ -162,6 +165,7 @@ export default function Dashboard() {
           })
         );
         setTopProducts(products.slice(0, 5));
+        
       } catch (error) {
         console.error("Error fetching top products:", error);
       }
@@ -190,6 +194,7 @@ export default function Dashboard() {
           })
         );
         setRecentInvoices(invoices);
+        setLoading(false);
       } catch (error) {
         console.error("Error fetching recent invoices:", error);
       }
@@ -199,6 +204,9 @@ export default function Dashboard() {
     fetchStats();
     fetchTopProducts();
   }, []);
+    if (loading) {
+      return <LoadingPage />;
+    }
 
   return (
     <div className="min-h-screen bg-white">
@@ -471,10 +479,7 @@ export default function Dashboard() {
                           </span>
                         </p>
                         <p className="text-xs text-gray-500 mt-1">
-                          {product.quantity}{" "}
-                          {product.category.toLowerCase() === "bulk"
-                            ? "kgs"
-                            : "units"}{" "}
+                          {product.quantity}{" "} kgs
                           sold
                         </p>
                       </div>
