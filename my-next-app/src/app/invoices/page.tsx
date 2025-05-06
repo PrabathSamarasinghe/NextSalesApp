@@ -13,6 +13,7 @@ import {
 import { useRouter } from "next/navigation";
 import Pagination from "@/components/Pagination";
 import Link from "next/link";
+import LoadingPage from "@/components/loadingPage";
 
 
 interface CustomerDetails {
@@ -85,6 +86,7 @@ export default function InvoicesList() {
       const data = await response.json();
       setInvoicesStructure(data.invoices);
       setIsLoading(false);
+      setLoading(false);
     };
     fetchRole();
     fetchInvoices();
@@ -143,7 +145,7 @@ export default function InvoicesList() {
 
   const [advancePayment, setAdvancePayment] = useState<number>(0);
   const [isAdvancePaymentClicked, setIsAdvancePaymentClicked] = useState(false);
-  
+  const [loading, setLoading] = useState(true);
 
   // Reset to first page when filters change
   const handleFilterChange = (newStatus: string) => {
@@ -232,6 +234,9 @@ export default function InvoicesList() {
     );
   };
 
+  if (loading) {
+        return <LoadingPage />;
+      }
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
