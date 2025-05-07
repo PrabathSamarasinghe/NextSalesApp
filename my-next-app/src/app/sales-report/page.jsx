@@ -8,6 +8,10 @@ import {
   CartesianGrid,
   Tooltip,
   Legend,
+  PieChart,
+  Pie,
+  Sector,
+  Cell,
   ResponsiveContainer,
 } from "recharts";
 import {
@@ -19,7 +23,95 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
+const renderActiveShape = (props) => {
+  const RADIAN = Math.PI / 180;
+  const {
+    cx,
+    cy,
+    midAngle,
+    innerRadius,
+    outerRadius,
+    startAngle,
+    endAngle,
+    fill,
+    payload,
+    percent,
+    value,
+  } = props;
+  const sin = Math.sin(-RADIAN * midAngle);
+  const cos = Math.cos(-RADIAN * midAngle);
+  const sx = cx + (outerRadius + 10) * cos;
+  const sy = cy + (outerRadius + 10) * sin;
+  const mx = cx + (outerRadius + 30) * cos;
+  const my = cy + (outerRadius + 30) * sin;
+  const ex = mx + (cos >= 0 ? 1 : -1) * 22;
+  const ey = my;
+  const textAnchor = cos >= 0 ? "start" : "end";
+
+  return (
+    <g>
+      <text
+        x={cx}
+        y={cy}
+        dy={8}
+        textAnchor="middle"
+        fill={fill}
+        fontSize={14}
+        fontWeight="bold"
+      >
+        {payload.name}
+      </text>
+      <Sector
+        cx={cx}
+        cy={cy}
+        innerRadius={innerRadius}
+        outerRadius={outerRadius + 6}
+        startAngle={startAngle}
+        endAngle={endAngle}
+        fill={fill}
+      />
+      <Sector
+        cx={cx}
+        cy={cy}
+        startAngle={startAngle}
+        endAngle={endAngle}
+        innerRadius={outerRadius + 8}
+        outerRadius={outerRadius + 10}
+        fill={fill}
+      />
+      <path
+        d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`}
+        stroke={fill}
+        fill="none"
+        strokeWidth={2}
+      />
+      <circle cx={ex} cy={ey} r={2} fill={fill} stroke="none" />
+      <text
+        x={ex + (cos >= 0 ? 1 : -1) * 12}
+        y={ey}
+        textAnchor={textAnchor}
+        fill="#333"
+        fontSize={12}
+      >
+        {`${payload.name}`}
+      </text>
+      <text
+        x={ex + (cos >= 0 ? 1 : -1) * 12}
+        y={ey}
+        dy={18}
+        textAnchor={textAnchor}
+        fill="#666"
+        fontSize={12}
+      >
+        {`${(percent * 100).toFixed(1)}%`}
+      </text>
+    </g>
+  );
+};
+
 export default function ProductSalesReport() {
+  const [activeRevenue, setActiveRevenue] = useState(0);
+  const [activeQuantity, setActiveQuantity] = useState(0);
   const router = useRouter();
   const [salesData, setSalesData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -29,10 +121,25 @@ export default function ProductSalesReport() {
   const [customEndDate, setCustomEndDate] = useState("");
   const [showCustomDateFields, setShowCustomDateFields] = useState(false);
 
+  const [productWiseRevenue, setProductWiseRevenue] = useState([]);
+
+  const [role, setRole] = useState("");
+
   useLayoutEffect(() => {
     fetchSalesData();
+    fetchRole();
   }, [timeFrame, customStartDate, customEndDate]);
 
+  const fetchRole = async () => {
+    try{
+
+      const response = await fetch("/api/admin/auth");
+      const data = await response.json();
+      setRole(data.decoded.role)
+    }catch(error){
+      console.error("Error fetching role:", error);
+    }
+  }
   const fetchSalesData = async () => {
     setError("");
 
@@ -57,6 +164,27 @@ export default function ProductSalesReport() {
 
       const data = await response.json();
       setSalesData(data.data);
+
+      const revenueMap = {};
+
+      data.data.forEach((item) => {
+        const productName = item.productName;
+
+        if (revenueMap[productName]) {
+          revenueMap[productName].kilos += item.totalQuantity;
+          revenueMap[productName].revenue += item.totalRevenue;
+        } else {
+          revenueMap[productName] = {
+            id: Object.keys(revenueMap).length + 1,
+            name: item.productName,
+            kilos: item.totalQuantity,
+            revenue: item.totalRevenue,
+          };
+        }
+      });
+
+      setProductWiseRevenue(Object.values(revenueMap));
+
       setError("");
       setLoading(false);
     } catch (error) {
@@ -232,14 +360,15 @@ export default function ProductSalesReport() {
                       Total Kilos Sold
                     </h3>
                     <p className="text-2xl font-bold text-green-900">
-                      {(Number(totalQuantity)).toLocaleString("en-US", {
+                      {Number(totalQuantity).toLocaleString("en-US", {
                         minimumFractionDigits: 0,
-                      })}{" "}kg
+                      })}{" "}
+                      kg
                     </p>
                   </div>
                 </div>
               </div>
-              <div className="bg-purple-50 rounded-lg p-6 border border-purple-100">
+              {role !== "admin" && (<div className="bg-purple-50 rounded-lg p-6 border border-purple-100">
                 <div className="flex items-center">
                   <div className="p-3 bg-purple-100 rounded-lg">
                     <TrendingUp size={24} className="text-purple-600" />
@@ -253,7 +382,41 @@ export default function ProductSalesReport() {
                     </p>
                   </div>
                 </div>
-              </div>
+              </div>)}
+              {role==="admin" && (<div className="bg-amber-50 rounded-lg p-6 border border-amber-100 hover:shadow-md transition-shadow duration-300">
+                <div className="flex items-center">
+                  <div className="p-3 bg-amber-100 rounded-lg flex-shrink-0">
+                    <DollarSign size={24} className="text-amber-600" />
+                  </div>
+                  <div className="ml-4 min-w-0 flex-1">
+                    <h3 className="text-sm font-medium text-amber-600 mb-1">
+                      My Commission
+                    </h3>
+                    <p
+                      className="text-2xl font-bold text-amber-900 truncate"
+                      title={formatCurrency(
+                        productWiseRevenue.reduce((total, product) => {
+                          const commission =
+                            product.name.toLowerCase() === "dust 2"
+                              ? 50000
+                              : Number(product.revenue) * 0.05;
+                          return total + commission;
+                        }, 0)
+                      )}
+                    >
+                      {formatCurrency(
+                        productWiseRevenue.reduce((total, product) => {
+                          const commission =
+                            product.name.toLowerCase() === "dust 2"
+                              ? 50000
+                              : Number(product.revenue) * 0.05;
+                          return total + commission;
+                        }, 0)
+                      )}
+                    </p>
+                  </div>
+                </div>
+              </div>)}
             </div>
 
             {/* Chart */}
@@ -403,7 +566,10 @@ export default function ProductSalesReport() {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500">
                             {formatCurrency(
-                              product.totalRevenue / (product.totalQuantity > 1 ? product.totalQuantity : product.totalQuantity*1000)
+                              product.totalRevenue /
+                                (product.totalQuantity > 1
+                                  ? product.totalQuantity
+                                  : product.totalQuantity * 1000)
                             )}
                             {product.totalQuantity > 1 ? "/kg" : "/g"}
                           </td>
@@ -438,6 +604,201 @@ export default function ProductSalesReport() {
                         <td className="px-6 py-4 text-right font-medium text-gray-900">
                           {formatCurrency(totalRevenue / totalQuantity)}
                         </td>
+                      </tr>
+                    </tfoot>
+                  )}
+                </table>
+              </div>
+            </div>
+
+            <div className="mt-8">
+              <h3 className="text-lg font-medium text-gray-800 mb-4">
+                Summary
+              </h3>
+              <div className="mb-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="bg-white p-4 rounded-lg border border-gray-200">
+                  <h4 className="text-lg font-medium text-gray-800 mb-4">
+                    Revenue Distribution
+                  </h4>
+                  <div className="h-80">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          activeIndex={activeRevenue}
+                          activeShape={renderActiveShape}
+                          data={productWiseRevenue}
+                          dataKey="revenue"
+                          nameKey="name"
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={60}
+                          outerRadius={100}
+                          onMouseEnter={(_, index) => setActiveRevenue(index)}
+                        >
+                          {productWiseRevenue.map((entry, index) => (
+                            <Cell
+                              key={`cell-${index}`}
+                              fill={`hsl(${index * 45}, 70%, 50%)`}
+                            />
+                          ))}
+                        </Pie>
+                        <Tooltip
+                          formatter={(value) => formatCurrency(value)}
+                          contentStyle={{
+                            backgroundColor: "rgba(255, 255, 255, 0.9)",
+                            borderRadius: "8px",
+                            boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
+                          }}
+                        />
+                        <Legend />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
+                <div className="bg-white p-4 rounded-lg border border-gray-200">
+                  <h4 className="text-lg font-medium text-gray-800 mb-4">
+                    Quantity Distribution
+                  </h4>
+                  <div className="h-80">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          activeIndex={activeQuantity}
+                          activeShape={renderActiveShape}
+                          data={productWiseRevenue}
+                          dataKey="kilos"
+                          nameKey="name"
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={60}
+                          outerRadius={100}
+                          onMouseEnter={(_, index) => setActiveQuantity(index)}
+                        >
+                          {productWiseRevenue.map((entry, index) => (
+                            <Cell
+                              key={`cell-${index}`}
+                              fill={`hsl(${index * 45 + 120}, 70%, 50%)`}
+                            />
+                          ))}
+                        </Pie>
+                        <Tooltip
+                          formatter={(value) => `${value} kg`}
+                          contentStyle={{
+                            backgroundColor: "rgba(255, 255, 255, 0.9)",
+                            borderRadius: "8px",
+                            boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
+                          }}
+                        />
+                        <Legend />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              </div>
+              <div className="overflow-x-auto rounded-lg border border-gray-200">
+                <table className="min-w-full divide-y divide-gray-200 ">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Product
+                      </th>
+                      <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Quantity Sold (kg)
+                      </th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Total Revenue (LKR)
+                      </th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Avg. Price (LKR/kg)
+                      </th>
+                      {role === "admin" && <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Commissions (LKR)
+                      </th>}
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {loading ? (
+                      <tr>
+                        <td colSpan={5} className="px-6 py-4 text-center">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                        </td>
+                      </tr>
+                    ) : error ? (
+                      <tr>
+                        <td
+                          colSpan={5}
+                          className="px-6 py-4 text-center text-red-500"
+                        >
+                          {error}
+                        </td>
+                      </tr>
+                    ) : productWiseRevenue.length > 0 ? (
+                      productWiseRevenue.map((product) => (
+                        <tr key={product.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm font-medium text-gray-900">
+                              {product.name}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">
+                            {product.kilos}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium text-gray-900">
+                            {formatCurrency(product.revenue)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500">
+                            {formatCurrency(
+                              product.revenue /
+                                (product.kilos > 1
+                                  ? product.kilos
+                                  : product.kilos * 1000)
+                            )}
+                          </td>
+                          {role === "admin" && <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500">
+                            {formatCurrency(
+                              product.name.toLowerCase() === "dust 2"
+                                ? 50000
+                                : Number(product.revenue) * 0.05
+                            )}
+                          </td>}
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td
+                          colSpan={5}
+                          className="px-6 py-4 text-center text-gray-500"
+                        >
+                          No sales data available for the selected period
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                  {productWiseRevenue.length > 0 && (
+                    <tfoot className="bg-gray-50">
+                      <tr>
+                        <td className="px-6 py-4 font-medium text-gray-900">
+                          Total
+                        </td>
+                        <td className="px-6 py-4 text-center font-medium text-gray-900">
+                          {/* {totalQuantity} */}
+                        </td>
+                        <td className="px-6 py-4 text-right font-bold text-gray-900">
+                          {formatCurrency(totalRevenue)}
+                        </td>
+                        <td className="px-6 py-4 text-right font-medium text-gray-900"></td>
+                        {role === "admin" && <td className="px-6 py-4 text-right font-medium text-gray-900">
+                          {formatCurrency(
+                            productWiseRevenue.reduce((acc, product) => {
+                              const commission =
+                                product.name.toLowerCase() === "dust 2"
+                                  ? 50000
+                                  : Number(product.revenue) * 0.05;
+                              return acc + commission;
+                            }, 0)
+                          )}
+                        </td>}
                       </tr>
                     </tfoot>
                   )}
