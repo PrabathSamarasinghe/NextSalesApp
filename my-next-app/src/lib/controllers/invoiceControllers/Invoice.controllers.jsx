@@ -98,6 +98,119 @@ export const getInvoicesOfCustomer = async (customerId) => {
   }
 };
 
+export const getActiveMonthsData = async ({ timeFrame, startDate, endDate, productName = "Dust 2" }) => {
+  try {
+      await connectDB();
+      let dateFilter = {};
+      
+      // Handle time frame filters
+      if (timeFrame) {
+          const today = new Date();
+          switch (timeFrame) {
+              case 'today':
+                  dateFilter = { 
+                      date: { 
+                          $gte: new Date(today.setHours(0, 0, 0, 0)).toISOString(), 
+                          $lte: new Date(today.setHours(23, 59, 59, 999)).toISOString() 
+                      } 
+                  };
+                  break;
+              case 'thisWeek':
+                  const startOfWeek = new Date(today.setDate(today.getDate() - today.getDay()));
+                  const endOfWeek = new Date(today.setDate(today.getDate() - today.getDay() + 6));
+                  dateFilter = { 
+                      date: { 
+                          $gte: startOfWeek.toISOString(), 
+                          $lte: endOfWeek.toISOString() 
+                      } 
+                  };
+                  break;
+              case 'thisMonth':
+                  dateFilter = { 
+                      date: { 
+                          $gte: new Date(today.getFullYear(), today.getMonth(), 1).toISOString(),
+                          $lte: new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString()
+                      } 
+                  };
+                  break;
+              case 'thisYear':
+                  dateFilter = { 
+                      date: {
+                          $gte: new Date(today.getFullYear(), 0, 1).toISOString(),
+                          $lte: new Date(today.getFullYear(), 11, 31).toISOString()
+                      } 
+                  };
+                  break;
+              default:
+                  break;
+          }
+      } else if (startDate && endDate) {
+          // Handle custom date range
+          dateFilter = { 
+              date: { 
+                  $gte: new Date(startDate).toISOString(), 
+                  $lte: new Date(endDate).toISOString() 
+              } 
+          };
+      }
+
+      // Build the match conditions
+      const matchConditions = { ...dateFilter };
+      
+      // Add product name filter if provided
+      if (productName) {
+          matchConditions['items.name'] = productName;
+      }
+
+      // Get distinct months with invoices
+      const activeMonths = await Invoice.aggregate([
+          { $match: matchConditions },
+          {
+              $project: {
+                  // Convert string date to proper date object
+                  convertedDate: {
+                      $dateFromString: {
+                          dateString: "$date",
+                          format: "%Y-%m-%d" // Adjust format if your date strings are different
+                      }
+                  },
+                  // Include items for filtering if productName was provided
+                  ...(productName && { items: 1 })
+              }
+          },
+          // Only include documents that have the product if productName was provided
+          ...(productName ? [{
+              $match: {
+                  'items.name': productName
+              }
+          }] : []),
+          {
+              $group: {
+                  _id: {
+                      year: { $year: "$convertedDate" },
+                      month: { $month: "$convertedDate" }
+                  },
+                  // We just need to count 1 document per month
+                  count: { $sum: 1 }
+              }
+          },
+          {
+              $count: "activeMonths"
+          }
+      ]);
+
+      return {
+          success: true,
+          activeMonths: activeMonths[0]?.activeMonths || 0,
+          ...(productName && { productName }) // Include product name in response if filtered
+      };
+      
+  } catch (error) {
+      console.error("Error fetching active months:", error);
+      throw error;
+  }
+};
+
 export const getAdditionalData = async (customerId) => {
   try {
     await connectDB();

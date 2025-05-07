@@ -122,22 +122,52 @@ export default function ProductSalesReport() {
   const [showCustomDateFields, setShowCustomDateFields] = useState(false);
 
   const [productWiseRevenue, setProductWiseRevenue] = useState([]);
-
+  const [activeMonths, setActiveMonths] = useState();
   const [role, setRole] = useState("");
 
   useLayoutEffect(() => {
     fetchSalesData();
     fetchRole();
+    fetchActiveMonths();
   }, [timeFrame, customStartDate, customEndDate]);
 
   const fetchRole = async () => {
-    try{
-
+    try {
       const response = await fetch("/api/admin/auth");
       const data = await response.json();
-      setRole(data.decoded.role)
-    }catch(error){
+      setRole(data.decoded.role);
+    } catch (error) {
       console.error("Error fetching role:", error);
+    }
+  };
+  
+
+  const fetchActiveMonths = async () => {
+    
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 800));
+
+      const params = new URLSearchParams();
+
+      if (timeFrame === "custom" && customStartDate && customEndDate) {
+        params.append("startDate", customStartDate);
+        params.append("endDate", customEndDate);
+      } else {
+        params.append("timeFrame", timeFrame);
+      }
+
+      const response = await fetch(
+        `/api/invoice/working-months?${params.toString()}`
+      );
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+      const data = await response.json();      
+      setActiveMonths(data.activeMonths);
+      setError("");
+
+    } catch (error) {
+      console.error("Error fetching active months:", error);
     }
   }
   const fetchSalesData = async () => {
@@ -256,7 +286,30 @@ export default function ProductSalesReport() {
     );
   };
 
+  const commissionDust2 = (productWiseRevenue) => {
+    const baseCommission = 50000; // Base commission for Dust 2
+    const dust2Product = productWiseRevenue.find(
+      (product) => product.name.toLowerCase() === "dust 2"
+    );
+    if (dust2Product) {
+      return baseCommission * activeMonths;
+    }
+    return 0;
+  };
+
+  const commissionCalculator = (productWiseRevenue) => {
+    return productWiseRevenue.reduce((total, product) => {
+      if (product.name.toLowerCase() === "dust 2") {
+        const baseCommission = 50000; 
+        return total + baseCommission * activeMonths;
+        }
+        return total + (product.revenue * 0.05);
+      }, 0
+    );
+  };
   const { totalRevenue, totalQuantity, totalInvoices } = getTotalStats();
+  const totalCommission = commissionCalculator(productWiseRevenue);
+  const dust2Commission = commissionDust2(productWiseRevenue);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -368,55 +421,43 @@ export default function ProductSalesReport() {
                   </div>
                 </div>
               </div>
-              {role !== "admin" && (<div className="bg-purple-50 rounded-lg p-6 border border-purple-100">
-                <div className="flex items-center">
-                  <div className="p-3 bg-purple-100 rounded-lg">
-                    <TrendingUp size={24} className="text-purple-600" />
-                  </div>
-                  <div className="ml-4">
-                    <h3 className="text-sm font-medium text-purple-600">
-                      Total Invoices
-                    </h3>
-                    <p className="text-2xl font-bold text-purple-900">
-                      {totalInvoices}
-                    </p>
-                  </div>
-                </div>
-              </div>)}
-              {role==="admin" && (<div className="bg-amber-50 rounded-lg p-6 border border-amber-100">
-                <div className="flex items-center">
-                  <div className="p-3 bg-amber-100 rounded-lg flex-shrink-0">
-                    <DollarSign size={24} className="text-amber-600" />
-                  </div>
-                  <div className="ml-4 min-w-0 flex-1">
-                    <h3 className="text-sm font-medium text-amber-600 mb-1">
-                      My Commission
-                    </h3>
-                    <p
-                      className="text-2xl font-bold text-amber-900 truncate"
-                      title={formatCurrency(
-                        productWiseRevenue.reduce((total, product) => {
-                          const commission =
-                            product.name.toLowerCase() === "dust 2"
-                              ? 50000
-                              : Number(product.revenue) * 0.05;
-                          return total + commission;
-                        }, 0)
-                      )}
-                    >
-                      {formatCurrency(
-                        productWiseRevenue.reduce((total, product) => {
-                          const commission =
-                            product.name.toLowerCase() === "dust 2"
-                              ? 50000
-                              : Number(product.revenue) * 0.05;
-                          return total + commission;
-                        }, 0)
-                      )}
-                    </p>
+              {role !== "admin" && (
+                <div className="bg-purple-50 rounded-lg p-6 border border-purple-100">
+                  <div className="flex items-center">
+                    <div className="p-3 bg-purple-100 rounded-lg">
+                      <TrendingUp size={24} className="text-purple-600" />
+                    </div>
+                    <div className="ml-4">
+                      <h3 className="text-sm font-medium text-purple-600">
+                        Total Invoices
+                      </h3>
+                      <p className="text-2xl font-bold text-purple-900">
+                        {totalInvoices}
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>)}
+              )}
+              {role === "admin" && (
+                <div className="bg-amber-50 rounded-lg p-6 border border-amber-100">
+                  <div className="flex items-center">
+                    <div className="p-3 bg-amber-100 rounded-lg flex-shrink-0">
+                      <DollarSign size={24} className="text-amber-600" />
+                    </div>
+                    <div className="ml-4 min-w-0 flex-1">
+                      <h3 className="text-sm font-medium text-amber-600 mb-1">
+                        My Commission
+                      </h3>
+                      <p
+                        className="text-2xl font-bold text-amber-900 truncate"
+                        title={formatCurrency(totalCommission)}
+                      >
+                        {formatCurrency(totalCommission)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Chart */}
@@ -712,9 +753,11 @@ export default function ProductSalesReport() {
                       <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Avg. Price (LKR/kg)
                       </th>
-                      {role === "admin" && <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Commissions (LKR)
-                      </th>}
+                      {role === "admin" && (
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Commissions (LKR)
+                        </th>
+                      )}
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
@@ -742,7 +785,7 @@ export default function ProductSalesReport() {
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">
-                            {product.kilos}
+                            {Number(product.kilos).toFixed(2)}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium text-gray-900">
                             {formatCurrency(product.revenue)}
@@ -755,13 +798,15 @@ export default function ProductSalesReport() {
                                   : product.kilos * 1000)
                             )}
                           </td>
-                          {role === "admin" && <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500">
-                            {formatCurrency(
-                              product.name.toLowerCase() === "dust 2"
-                                ? 50000
-                                : Number(product.revenue) * 0.05
-                            )}
-                          </td>}
+                          {role === "admin" && (
+                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500">
+                              {formatCurrency(
+                                product.name.toLowerCase() === "dust 2"
+                                  ? Number(dust2Commission)
+                                  : Number(product.revenue) * 0.05
+                              )}
+                            </td>
+                          )}
                         </tr>
                       ))
                     ) : (
@@ -788,17 +833,11 @@ export default function ProductSalesReport() {
                           {formatCurrency(totalRevenue)}
                         </td>
                         <td className="px-6 py-4 text-right font-medium text-gray-900"></td>
-                        {role === "admin" && <td className="px-6 py-4 text-right font-medium text-gray-900">
-                          {formatCurrency(
-                            productWiseRevenue.reduce((acc, product) => {
-                              const commission =
-                                product.name.toLowerCase() === "dust 2"
-                                  ? 50000
-                                  : Number(product.revenue) * 0.05;
-                              return acc + commission;
-                            }, 0)
-                          )}
-                        </td>}
+                        {role === "admin" && (
+                          <td className="px-6 py-4 text-right font-medium text-gray-900">
+                            {formatCurrency(totalCommission)}
+                          </td>
+                        )}
                       </tr>
                     </tfoot>
                   )}
