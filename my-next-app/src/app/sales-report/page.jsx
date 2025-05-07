@@ -383,7 +383,7 @@ export default function ProductSalesReport() {
                   </div>
                 </div>
               </div>)}
-              {role==="admin" && (<div className="bg-amber-50 rounded-lg p-6 border border-amber-100 hover:shadow-md transition-shadow duration-300">
+              {role==="admin" && (<div className="bg-amber-50 rounded-lg p-6 border border-amber-100">
                 <div className="flex items-center">
                   <div className="p-3 bg-amber-100 rounded-lg flex-shrink-0">
                     <DollarSign size={24} className="text-amber-600" />
