@@ -1,8 +1,7 @@
 "use client";
 import { JSX, useState, useLayoutEffect } from "react";
 import { Save, Plus, Trash2, ArrowLeft, Check, X } from "lucide-react";
-import { useRouter } from "next/navigation";
-import AddCustomer from "@/components/AddCustomer";
+import { useParams, useRouter } from "next/navigation";
 import LoadingPage from "@/components/loadingPage";
 
 // Define TypeScript interfaces
@@ -45,12 +44,45 @@ interface Product {
   stock: number;
   category?: string;
 }
+interface InvoiceId {
+  params:{
+    invoiceId : string;
+  }
+}
 
 export default function InvoiceEntry(): JSX.Element {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [clicked, setClicked] = useState(false);
+  const {invoiceId} = useParams() as InvoiceId["params"];
+  const [loading, setLoading] = useState(false);
 
   useLayoutEffect(() => {
+    setLoading(true);
+    const fetchInvoiceData = async() => {
+      const response = await fetch(`/api/invoice/getinvoice`, {
+        method: "POST",
+        body: JSON.stringify({ invoiceId }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      const data = await response.json();
+      console.log(data);
+      
+      // Determine the payment status based on isPaid and advance values
+      let paymentStatus: "paid" | "unpaid" | "advance";
+      if (data.isPaid) {
+        paymentStatus = "paid";
+      } else if (data.advance > 0) {
+        paymentStatus = "advance";
+      } else {
+        paymentStatus = "unpaid";
+      }
+      
+      // Set the invoice with the correct payment status
+      setInvoice({
+        ...data,
+        paymentStatus: paymentStatus
+      });
+    }
     const fetchCustomers = async () => {
       const response = await fetch("/api/customer/all");
       const data = await response.json();
@@ -61,29 +93,12 @@ export default function InvoiceEntry(): JSX.Element {
       const response = await fetch("/api/product/all");
       const data = await response.json();
       setProducts(data);
+      setLoading(false);
     };
-
-    const fetchNewInvoiceNumber = async () => {
-      const response = await fetch("/api/invoice/getnextINVnum");
-      const data = await response.json();
-      setInvoice((prev) => ({
-        ...prev,
-        invoiceNumber: data,
-      }));
-    };
-    if (!isModalOpen) {
-      const refreshCustomers = async () => {
-        const response = await fetch("/api/customer/all");
-        const data = await response.json();
-        setCustomers(data);
-      };
-      refreshCustomers();
-    }
-
-    fetchNewInvoiceNumber();
+    fetchInvoiceData();
     fetchProducts();
     fetchCustomers();
-  }, [isModalOpen, clicked]);
+  }, [invoiceId]);
 
   const router = useRouter();
   const [invoice, setInvoice] = useState<InvoiceData>({
@@ -174,8 +189,7 @@ export default function InvoiceEntry(): JSX.Element {
     if (invoice.items.length > 1) {
       const filteredItems = invoice.items.filter((item) => item.id !== id);
       const subtotal = filteredItems.reduce((sum, item) => sum + item.total, 0);
-      const tax = subtotal * 0.1;
-      const total = subtotal + tax;
+      const total = subtotal;
 
       setInvoice({
         ...invoice,
@@ -226,7 +240,7 @@ export default function InvoiceEntry(): JSX.Element {
     }
   };
 
-  const [loading, setLoading] = useState(false);
+  
   // Function to handle payment status change
   const handlePaymentStatusChange = (status: "paid" | "unpaid" | "advance") => {
     const isPaid = status === "paid";
@@ -274,12 +288,12 @@ export default function InvoiceEntry(): JSX.Element {
     };
 
     try {
-      const response = await fetch("/api/invoice/create", {
+      const response = await fetch("/api/invoice/update", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(invoiceData),
+        body: JSON.stringify({ invoiceId: invoiceId, invoiceData }),
       });
 
       if (!response.ok) {
@@ -308,7 +322,8 @@ export default function InvoiceEntry(): JSX.Element {
         notes: "",
       });
       setLoading(false);
-      confirm("Invoice saved successfully. Do you want to create another invoice?") ? setClicked(true) : router.push("/dashboard");
+      alert("Invoice saved successfully");
+      router.push("/invoices");
     } catch (error) {
       console.error("Error saving invoice:", error);
       alert("Failed to save invoice. Please try again.");
@@ -326,23 +341,15 @@ export default function InvoiceEntry(): JSX.Element {
         <div className="flex items-center mb-6">
           <button
             className="flex items-center text-gray-600 hover:text-blue-600 transition-colors duration-200"
-            onClick={() => router.push("/dashboard")}
+            onClick={() => router.push("/invoices")}
           >
             <ArrowLeft size={20} className="mr-2" />
-            <span className="font-medium">Back to Dashboard</span>
+            <span className="font-medium">Back to Invoices</span>
           </button>
         </div>
         <div className="bg-white rounded-lg shadow-lg border border-gray-100">
           <div className="flex justify-between items-center px-6 py-5 border-b border-gray-200 bg-gray-50 rounded-t-lg">
-            <h2 className="text-2xl font-bold text-gray-800">New Invoice</h2>
-            <button
-              type="button"
-              onClick={() => setIsModalOpen(true)}
-              className="inline-flex items-center px-4 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 shadow-sm"
-            >
-              <Plus size={20} className="mr-2" />
-              Add Customer
-            </button>
+            <h2 className="text-2xl font-bold text-gray-800">Update Invoice</h2>
           </div>
 
           <div className="p-6">
@@ -929,13 +936,12 @@ export default function InvoiceEntry(): JSX.Element {
                 onClick={handleSaveInvoice}
               >
                 <Save size={18} />
-                <span>Save Invoice</span>
+                <span>Update Invoice</span>
               </button>
             </div>
           </div>
         </div>
       </div>
-      {isModalOpen && <AddCustomer setIsModalOpen={setIsModalOpen} />}
     </div>
   );
 }
