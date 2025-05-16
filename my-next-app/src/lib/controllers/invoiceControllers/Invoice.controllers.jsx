@@ -22,6 +22,23 @@ export const createInvoice = async (invoiceData) => {
     };
   }
 };
+export const updateInvoice = async (invoiceId, invoiceData) => {
+  try {
+    await connectDB();
+    const invoice = await Invoice.findById(invoiceId);
+    if (!invoice) {
+      return { status: 404, message: "Invoice not found" };
+    }
+    Object.assign(invoice, invoiceData);
+    await invoice.save();
+    return { status: 200, message: "Invoice updated successfully" };
+  } catch (error) {
+    return {
+      status: 500,
+      message: error.message,
+    };
+  }
+};
 
 export const getAllInvoices = async () => {
   try {
@@ -39,13 +56,48 @@ export const getAllInvoices = async () => {
 export const deleteInvoice = async (invoiceId) => {
   try {
     await connectDB();
-    const result = await Invoice.updateOne(
-      { _id: invoiceId },
-      { isCancelled: true }
+    const invoice = await Invoice.findById(invoiceId);
+
+    await Promise.all(
+      invoice.items.map(async (item) => {
+        await Product.findByIdAndUpdate(item.product, {
+          $inc: { stock: item.quantity },
+        });
+        const result = await Invoice.findByIdAndDelete(invoiceId);
+        if (!result) {
+          return { status: 404, message: "Invoice not found" };
+        }
+        return { status: 200, message: "Invoice deleted successfully" };
+      })
     );
-    if (result.modifiedCount === 0) {
-      return { status: 404, message: "Invoice not found" };
-    }
+  } catch (error) {
+    return {
+      status: 500,
+      message: error.message,
+    };
+  }
+};
+
+export const cancelInvoice = async (invoiceId) => {
+  try {
+    await connectDB();
+    const invoice = await Invoice.findById(invoiceId);
+
+    await Promise.all(
+      invoice.items.map(async (item) => {
+        await Product.findByIdAndUpdate(item.product, {
+          $inc: { stock: item.quantity },
+        });
+        const result = await Invoice.updateOne(
+          { _id: invoiceId },
+          { isCancelled: true }
+        );
+        if (result.modifiedCount === 0) {
+          return { status: 404, message: "Invoice not found" };
+        }
+      })
+    );
+
     return { status: 200, message: "Invoice cancelled successfully" };
   } catch (error) {
     return {
@@ -60,7 +112,7 @@ export const getInvoicesOfCustomer = async (customerId) => {
     await connectDB();
     // Get all invoices for this customer
     const invoices = await Invoice.find({ customer: customerId }).lean().exec();
-    
+
     // Process each invoice to add categories to items
     const processedInvoices = await Promise.all(
       invoices.map(async (invoice) => {
@@ -71,23 +123,23 @@ export const getInvoicesOfCustomer = async (customerId) => {
             if (!product) {
               return item; // Handle case where product might not exist
             }
-            
+
             // Create a new object with item properties and category
             return {
               ...item,
-              category: product.category
+              category: product.category,
             };
           })
         );
-        
+
         // Return the invoice with processed items
         return {
           ...invoice,
-          items: processedItems
+          items: processedItems,
         };
       })
     );
-    
+
     return { status: 200, invoices: processedInvoices };
   } catch (error) {
     console.error("Error fetching customer invoices:", error);
@@ -98,116 +150,136 @@ export const getInvoicesOfCustomer = async (customerId) => {
   }
 };
 
-export const getActiveMonthsData = async ({ timeFrame, startDate, endDate, productName = "Dust 2" }) => {
+export const getActiveMonthsData = async ({
+  timeFrame,
+  startDate,
+  endDate,
+  productName = "Dust 2",
+}) => {
   try {
-      await connectDB();
-      let dateFilter = {};
-      
-      // Handle time frame filters
-      if (timeFrame) {
-          const today = new Date();
-          switch (timeFrame) {
-              case 'today':
-                  dateFilter = { 
-                      date: { 
-                          $gte: new Date(today.setHours(0, 0, 0, 0)).toISOString(), 
-                          $lte: new Date(today.setHours(23, 59, 59, 999)).toISOString() 
-                      } 
-                  };
-                  break;
-              case 'thisWeek':
-                  const startOfWeek = new Date(today.setDate(today.getDate() - today.getDay()));
-                  const endOfWeek = new Date(today.setDate(today.getDate() - today.getDay() + 6));
-                  dateFilter = { 
-                      date: { 
-                          $gte: startOfWeek.toISOString(), 
-                          $lte: endOfWeek.toISOString() 
-                      } 
-                  };
-                  break;
-              case 'thisMonth':
-                  dateFilter = { 
-                      date: { 
-                          $gte: new Date(today.getFullYear(), today.getMonth(), 1).toISOString(),
-                          $lte: new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString()
-                      } 
-                  };
-                  break;
-              case 'thisYear':
-                  dateFilter = { 
-                      date: {
-                          $gte: new Date(today.getFullYear(), 0, 1).toISOString(),
-                          $lte: new Date(today.getFullYear(), 11, 31).toISOString()
-                      } 
-                  };
-                  break;
-              default:
-                  break;
-          }
-      } else if (startDate && endDate) {
-          // Handle custom date range
-          dateFilter = { 
-              date: { 
-                  $gte: new Date(startDate).toISOString(), 
-                  $lte: new Date(endDate).toISOString() 
-              } 
+    await connectDB();
+    let dateFilter = {};
+
+    // Handle time frame filters
+    if (timeFrame) {
+      const today = new Date();
+      switch (timeFrame) {
+        case "today":
+          dateFilter = {
+            date: {
+              $gte: new Date(today.setHours(0, 0, 0, 0)).toISOString(),
+              $lte: new Date(today.setHours(23, 59, 59, 999)).toISOString(),
+            },
           };
+          break;
+        case "thisWeek":
+          const startOfWeek = new Date(
+            today.setDate(today.getDate() - today.getDay())
+          );
+          const endOfWeek = new Date(
+            today.setDate(today.getDate() - today.getDay() + 6)
+          );
+          dateFilter = {
+            date: {
+              $gte: startOfWeek.toISOString(),
+              $lte: endOfWeek.toISOString(),
+            },
+          };
+          break;
+        case "thisMonth":
+          dateFilter = {
+            date: {
+              $gte: new Date(
+                today.getFullYear(),
+                today.getMonth(),
+                1
+              ).toISOString(),
+              $lte: new Date(
+                today.getFullYear(),
+                today.getMonth() + 1,
+                0
+              ).toISOString(),
+            },
+          };
+          break;
+        case "thisYear":
+          dateFilter = {
+            date: {
+              $gte: new Date(today.getFullYear(), 0, 1).toISOString(),
+              $lte: new Date(today.getFullYear(), 11, 31).toISOString(),
+            },
+          };
+          break;
+        default:
+          break;
       }
-
-      // Build the match conditions
-      const matchConditions = { ...dateFilter };
-      
-      // Add product name filter if provided
-      if (productName) {
-          matchConditions['items.name'] = productName;
-      }
-
-      // Get distinct months with invoices
-      const activeMonths = await Invoice.aggregate([
-          { $match: matchConditions },
-          {
-              $project: {
-                  // Convert string date to proper date object
-                  convertedDate: {
-                      $dateFromString: {
-                          dateString: "$date",
-                          format: "%Y-%m-%d" // Adjust format if your date strings are different
-                      }
-                  },
-                  // Include items for filtering if productName was provided
-                  ...(productName && { items: 1 })
-              }
-          },
-          // Only include documents that have the product if productName was provided
-          ...(productName ? [{
-              $match: {
-                  'items.name': productName
-              }
-          }] : []),
-          {
-              $group: {
-                  _id: {
-                      year: { $year: "$convertedDate" },
-                      month: { $month: "$convertedDate" }
-                  },
-                  // We just need to count 1 document per month
-                  count: { $sum: 1 }
-              }
-          },
-          {
-              $count: "activeMonths"
-          }
-      ]);
-
-      return {
-          success: true,
-          activeMonths: activeMonths[0]?.activeMonths || 0,
-          ...(productName && { productName }) // Include product name in response if filtered
+    } else if (startDate && endDate) {
+      // Handle custom date range
+      dateFilter = {
+        date: {
+          $gte: new Date(startDate).toISOString(),
+          $lte: new Date(endDate).toISOString(),
+        },
       };
-      
+    }
+
+    // Build the match conditions
+    const matchConditions = { ...dateFilter };
+
+    // Add product name filter if provided
+    if (productName) {
+      matchConditions["items.name"] = productName;
+    }
+
+    // Get distinct months with invoices
+    const activeMonths = await Invoice.aggregate([
+      { $match: matchConditions },
+      {
+        $project: {
+          // Convert string date to proper date object
+          convertedDate: {
+            $dateFromString: {
+              dateString: "$date",
+              format: "%Y-%m-%d", // Adjust format if your date strings are different
+            },
+          },
+          // Include items for filtering if productName was provided
+          ...(productName && { items: 1 }),
+        },
+      },
+      // Only include documents that have the product if productName was provided
+      ...(productName
+        ? [
+            {
+              $match: {
+                "items.name": productName,
+              },
+            },
+          ]
+        : []),
+      {
+        $group: {
+          _id: {
+            year: { $year: "$convertedDate" },
+            month: { $month: "$convertedDate" },
+          },
+          // We just need to count 1 document per month
+          count: { $sum: 1 },
+        },
+      },
+      {
+        $count: "activeMonths",
+      },
+    ]);
+
+    return {
+      success: true,
+      activeMonths: activeMonths[0]?.activeMonths || 0,
+      ...(productName && { productName }), // Include product name in response if filtered
+    };
   } catch (error) {
-      console.error("Error fetching active months:", error);
-      throw error;
+    console.error("Error fetching active months:", error);
+    throw error;
   }
 };
 
@@ -306,6 +378,8 @@ export const getRecentInvoices = async () => {
     };
   }
 };
+
+
 
 export const getTopSellingProducts = async () => {
   try {
@@ -520,7 +594,7 @@ export const getInvoiceById = async (id) => {
     if (!invoice) {
       throw new Error("Invoice not found");
     }
-    
+
     // Map over items array and add category
     invoice.items = await Promise.all(
       invoice.items.map(async (item) => {
@@ -528,15 +602,15 @@ export const getInvoiceById = async (id) => {
         if (!product) {
           return item; // Handle case where product might not exist
         }
-        
+
         // Create a new object with item properties and category
         return {
           ...item,
-          category: product.category
+          category: product.category,
         };
       })
     );
-    
+
     return invoice;
   } catch (error) {
     console.error("Error fetching invoice:", error);

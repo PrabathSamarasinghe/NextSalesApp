@@ -59,7 +59,7 @@ export async function middleware(request: NextRequest) {
     }
 
     // Block viewers from accessing specific routes
-    if ((path.startsWith('/newInvoice') || path.startsWith('/received-invoice')) && role === 'viewer') {
+    if ((path.startsWith('/newInvoice') || path.startsWith('/received-invoice') || path.startsWith('/admin-requests')) && role === 'viewer') {
       return NextResponse.redirect(new URL('/dashboard', request.url));
     }
     
@@ -99,5 +99,6 @@ export const config = {
     '/top-sold',
     '/top-sold/:path*',
     '/received-invoice',
+    '/admin-requests',
   ],
 };

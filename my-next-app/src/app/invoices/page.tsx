@@ -1,5 +1,5 @@
 "use client";
-import { useState, useLayoutEffect } from "react";
+import { useState, useLayoutEffect, use } from "react";
 import {
   Search,
   Filter,
@@ -64,8 +64,10 @@ export default function InvoicesList() {
     useState<InvoiceStructure | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const navigate = useRouter();
+  const [pendingAmount, setPendingAmount] = useState(0);
 
   useLayoutEffect(() => {
+    setPendingAmount(0);
     const fetchRole = async () => {
       try{
 
@@ -84,6 +86,17 @@ export default function InvoicesList() {
         },
       });
       const data = await response.json();
+
+      if (data.error) {
+        console.error("Error fetching invoices:", data.error);
+        return;
+      }
+      
+      data.invoices.map((pending: InvoiceStructure)=>{
+        if(!pending.isPaid){
+          setPendingAmount((prev) => prev + pending.total);
+        }
+      })
       setInvoicesStructure(data.invoices);
       setIsLoading(false);
       setLoading(false);
@@ -175,10 +188,9 @@ export default function InvoicesList() {
       <ChevronDown className="ml-1 h-4 w-4 rotate-180" />
     );
   };
-
   const handleDeleteInvoice = async (invoiceId: string) => {
     try {
-      await fetch(`/api/invoice/cancel`, {
+      await fetch(`/api/invoice/delete`, {
         method: "POST",
         body: JSON.stringify({ invoiceId }),
         headers: {
@@ -190,6 +202,35 @@ export default function InvoicesList() {
       );
       console.log("Invoice deleted successfully");
       // Refresh invoices after deletion
+      const response = await fetch("/api/invoice/getall", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      const data = await response.json();
+      setInvoicesStructure(data.invoices);
+      setIsLoading(false);
+    } catch (error) {
+      console.error("Error deleting invoice:", error);
+    }
+    
+  }
+
+  const handleCancelInvoice = async (invoiceId: string) => {
+    try {
+      await fetch(`/api/invoice/cancel`, {
+        method: "POST",
+        body: JSON.stringify({ invoiceId }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      setInvoicesStructure((prev) =>
+        prev.filter((invoice) => invoice._id !== invoiceId)
+      );
+      console.log("Invoice canceled successfully");
+      // Refresh invoices after cancellation
       const response = await fetch("/api/invoice/getall", {
         method: "GET",
         headers: {
@@ -259,6 +300,17 @@ export default function InvoicesList() {
           <ArrowLeft size={20} className="mr-2" />
           <span>Back to Dashboard</span>
         </button>
+        <div className="ml-auto sm:flex gap-2 items-center">
+          <h1 className="text-sm text-gray-500">
+            Total Pending Amount:{" "}
+          </h1>
+            <span className="font-semibold text-gray-800">
+              Rs.
+              {pendingAmount
+                .toFixed(2)
+                .replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
+            </span>
+        </div>
       </div>
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
         <div className="p-4 border-b border-gray-200 flex justify-between flex-wrap gap-3">
@@ -430,6 +482,54 @@ export default function InvoicesList() {
                                 >
                                 <Eye className="h-4 w-4" />
                               </button>
+                              {role === "admin" && !invoice.isCancelled && (
+                                <Link
+                                  href={`/updateInvoice/${invoice._id}`}
+                                  className="text-green-600 hover:text-green-900"
+                                  title="Edit"
+                                >
+                                    <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    className="h-4 w-4"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                    >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                                    />
+                                    </svg>
+                                </Link>
+                              )}
+                                {role === 'admin' && !invoice.isCancelled && (
+                                <button
+                                  className="text-yellow-600 hover:text-yellow-900 transition-colors duration-200"
+                                  title="Cancel Invoice"
+                                  onClick={() => {
+                                  if (confirm('Are you sure you want to mark this invoice as cancelled? This cannot be undone.')) {
+                                    handleCancelInvoice(invoice._id);
+                                  }
+                                  }}
+                                >
+                                  <svg 
+                                  xmlns="http://www.w3.org/2000/svg" 
+                                  className="h-4 w-4" 
+                                  fill="none" 
+                                  viewBox="0 0 24 24" 
+                                  stroke="currentColor"
+                                  >
+                                  <path 
+                                    strokeLinecap="round" 
+                                    strokeLinejoin="round" 
+                                    strokeWidth={2} 
+                                    d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" 
+                                  />
+                                  </svg>
+                                </button>
+                                )}
 
                               {role === "admin" && !invoice.isCancelled && (
                               <button
