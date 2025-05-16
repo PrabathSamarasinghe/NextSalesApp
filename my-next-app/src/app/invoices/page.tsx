@@ -67,18 +67,18 @@ export default function InvoicesList() {
   const [pendingAmount, setPendingAmount] = useState(0);
 
   useLayoutEffect(() => {
-    setPendingAmount(0);
-    const fetchRole = async () => {
-      try{
-
-        const response = await fetch("/api/admin/auth");
-        const data = await response.json();
-        setRole(data.decoded.role)
-      }catch(error){
-        console.error("Error fetching role:", error);
-      }
+  const fetchRole = async () => {
+    try {
+      const response = await fetch("/api/admin/auth");
+      const data = await response.json();
+      setRole(data.decoded.role);
+    } catch (error) {
+      console.error("Error fetching role:", error);
     }
-    const fetchInvoices = async () => {
+  };
+
+  const fetchInvoices = async () => {
+    try {
       const response = await fetch("/api/invoice/getall", {
         method: "GET",
         headers: {
@@ -92,18 +92,26 @@ export default function InvoicesList() {
         return;
       }
       
-      data.invoices.map((pending: InvoiceStructure)=>{
-        if(!pending.isPaid){
-          setPendingAmount((prev) => prev + pending.total);
-        }
-      })
+      // Calculate the total pending amount once outside the map function
+      const totalPending = data.invoices.reduce((sum: number, invoice: InvoiceStructure) => {
+        return invoice.isPaid ? sum : sum + invoice.total;
+      }, 0);
+      
+      // Set states only once after calculation is complete
+      setPendingAmount(totalPending);
       setInvoicesStructure(data.invoices);
       setIsLoading(false);
       setLoading(false);
-    };
-    fetchRole();
-    fetchInvoices();
-  }, []); // Remove invoicesStructure dependency to prevent infinite loop
+    } catch (error) {
+      console.error("Error in fetchInvoices:", error);
+      setIsLoading(false);
+      setLoading(false);
+    }
+  };
+
+  fetchRole();
+  fetchInvoices();
+}, []);// Remove invoicesStructure dependency to prevent infinite loop
 
   // Filter and sort invoices first - MOVED THIS SECTION BEFORE PAGINATION
   const filteredInvoices = invoicesStructure
