@@ -308,7 +308,11 @@ export default function InvoiceEntry(): JSX.Element {
         notes: "",
       });
       setLoading(false);
-      confirm("Invoice saved successfully. Do you want to create another invoice?") ? setClicked(true) : router.push("/dashboard");
+      if (confirm("Invoice saved successfully. Do you want to create another invoice?")) {
+        setClicked(true);
+      } else {
+        router.push("/dashboard");
+      }
     } catch (error) {
       console.error("Error saving invoice:", error);
       alert("Failed to save invoice. Please try again.");
