@@ -303,7 +303,7 @@ export default function ProductSalesReport() {
         const baseCommission = 50000; 
         return total + baseCommission * activeMonths;
         }
-        return total + (product.revenue * 0.05);
+        return total + (product.revenue * 0.07);
       }, 0
     );
   };
