@@ -505,10 +505,10 @@ export default function ReceivedInvoiceEntry(): JSX.Element {
         <div className="flex items-center mb-6">
           <button
             className="flex items-center text-gray-600 hover:text-blue-600 transition-colors duration-200"
-            onClick={() => router.push("/products")}
+            onClick={() => router.push("/received")}
           >
             <ArrowLeft size={20} className="mr-2" />
-            <span className="font-medium">Back to Products</span>
+            <span className="font-medium">Back to Recieved Invoices</span>
           </button>
         </div>
         <div className="bg-white rounded-lg shadow-lg border border-gray-100">
