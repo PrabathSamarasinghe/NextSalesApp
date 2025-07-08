@@ -226,7 +226,7 @@ export default function Dashboard() {
                 Dashboard
               </h1>
               <p className="text-slate-600 mt-2 text-lg">
-                Welcome back! Here's an overview of your business performance.
+                {`Welcome back! Here's an overview of your business performance.`}
               </p>
             </div>
 

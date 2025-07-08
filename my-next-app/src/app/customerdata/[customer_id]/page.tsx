@@ -140,9 +140,7 @@ export default function CustomerDetails() {
 
           const totalAdvance = data.invoices.reduce(
             (sum: number, invoice: Invoice) => {
-              return (invoice as any).advance
-                ? sum + (invoice as any).advance
-                : sum;
+                return 'advance' in invoice ? sum + Number(invoice.advance) : sum;
             },
             0
           );
@@ -180,8 +178,6 @@ export default function CustomerDetails() {
         setIsLoading(false);
       }
     };
-
-    const fetchAdvancePayment = async () => {};
 
     if (customer_id) {
       fetchRole();
