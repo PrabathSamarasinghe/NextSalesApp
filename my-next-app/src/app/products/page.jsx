@@ -3,7 +3,7 @@ import { useState, useLayoutEffect } from "react";
 import { Plus, Search, Trash2, ArrowLeft, FileText } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Pagination from "@/components/Pagination";
-import LoadingPage from '@/components/loadingPage';
+import LoadingPage from "@/components/loadingPage";
 
 export default function ProductsPage() {
   // [Previous state and effect declarations remain exactly the same...]
@@ -60,7 +60,6 @@ export default function ProductsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const navigate = useRouter();
 
-
   const lastPostIndex = currentPage * itemsPerPage;
   const firstPostIndex = lastPostIndex - itemsPerPage;
   const currentPosts = products.slice(firstPostIndex, lastPostIndex);
@@ -95,10 +94,13 @@ export default function ProductsPage() {
             </button>
           </div>
         </div>
-        
+
         <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
           <button
             className="inline-flex items-center px-4 py-2.5 bg-white border border-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1 transition-all duration-200 shadow-sm hover:shadow"
+            onClick={() => {
+              navigate.push("/received");
+            }}
           >
             <FileText size={18} className="mr-2" />
             Received Invoices
@@ -106,6 +108,9 @@ export default function ProductsPage() {
           {role === "admin" && (
             <button
               className="inline-flex items-center px-4 py-2.5 bg-gradient-to-r from-green-600 to-green-700 text-white font-medium rounded-lg hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1 transition-all duration-200 shadow-sm hover:shadow"
+              onClick={() => {
+                navigate.push("/received-invoice");
+              }}
             >
               <Plus size={18} className="mr-2" />
               Add Products
@@ -160,12 +165,19 @@ export default function ProductsPage() {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {filteredProducts.map((product) => (
-                  <tr key={product._id} className="hover:bg-gray-50 transition-colors">
+                  <tr
+                    key={product._id}
+                    className="hover:bg-gray-50 transition-colors"
+                  >
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{product.name}</div>
+                      <div className="text-sm font-medium text-gray-900">
+                        {product.name}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-600">{product.category}</div>
+                      <div className="text-sm text-gray-600">
+                        {product.category}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-600">
@@ -176,7 +188,25 @@ export default function ProductsPage() {
                       <div className="text-sm text-gray-600">
                         {product.entireStock}
                         <span className="text-gray-400 text-xs ml-1">
-                          ({/* [Previous weight calculations remain the same] */})
+                          {" "}
+                          (
+                          {product.category.toLowerCase() === "bulk" ||
+                          product.category.toLowerCase() === "550g/l"
+                            ? `${product.entireStock} kg`
+                            : product.category.toLowerCase() === "tea bag"
+                            ? `${((product.entireStock * 2) / 1000).toFixed(
+                                2
+                              )} kg`
+                            : product.category.toLowerCase() === "sample 20g"
+                            ? `${((product.entireStock * 20) / 1000).toFixed(
+                                2
+                              )} kg`
+                            : `${(
+                                (product.entireStock *
+                                  Number(product.category.split("g")[0])) /
+                                1000
+                              ).toFixed(2)} kg`}
+                          )
                         </span>
                       </div>
                     </td>
@@ -184,7 +214,21 @@ export default function ProductsPage() {
                       <div className="text-sm text-gray-600">
                         {product.stock}
                         <span className="text-gray-400 text-xs ml-1">
-                          ({/* [Previous weight calculations remain the same] */})
+                          {" "}
+                          (
+                          {product.category.toLowerCase() === "bulk" ||
+                          product.category.toLowerCase() === "550g/l"
+                            ? `${product.stock} kg`
+                            : product.category.toLowerCase() === "tea bag"
+                            ? `${((product.stock * 2) / 1000).toFixed(2)} kg`
+                            : product.category.toLowerCase() === "sample 20g"
+                            ? `${((product.stock * 20) / 1000).toFixed(2)} kg`
+                            : `${(
+                                (product.stock *
+                                  Number(product.category.split("g")[0])) /
+                                1000
+                              ).toFixed(2)} kg`}
+                          )
                         </span>
                       </div>
                     </td>
@@ -192,7 +236,8 @@ export default function ProductsPage() {
                       <div className="text-sm font-medium text-gray-600">
                         {product.stock > 0 ? (
                           <span className="text-green-600">
-                            Rs.{Number(product.stock * product.price)
+                            Rs.
+                            {Number(product.stock * product.price)
                               .toFixed(2)
                               .replace(/\d(?=(\d{3})+\.)/g, "$&,")}
                           </span>
