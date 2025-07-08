@@ -231,10 +231,10 @@ export default function Dashboard() {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex flex-wrap gap-3">
+            <div className="sm:flex sm:flex-wrap gap-3 grid w-full sm:w-auto sm:justify-end">
               <Link
                 href="/sales-report"
-                className="inline-flex items-center px-5 py-2.5 text-sm font-medium bg-white text-slate-700 rounded-xl hover:bg-slate-50 border border-slate-200 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 transition-all duration-200 shadow-sm hover:shadow-md"
+                className="inline-flex items-center px-5 py-2.5 text-sm  font-medium bg-white text-slate-700 rounded-xl hover:bg-slate-50 border border-slate-200 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 transition-all duration-200 shadow-sm hover:shadow-md"
               >
                 <BarChart2 className="w-4 h-4 mr-2" />
                 Sales Report

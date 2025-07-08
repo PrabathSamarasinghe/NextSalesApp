@@ -457,6 +457,15 @@ export const getTopSellingProducts = async () => {
                             case: {
                               $eq: [
                                 { $toLower: "$productCategory" },
+                                "550g/l",
+                              ],
+                            },
+                            then: { $multiply: ["$items.quantity", 1000] },
+                          },
+                          {
+                            case: {
+                              $eq: [
+                                { $toLower: "$productCategory" },
                                 "sample",
                               ],
                             },
@@ -546,7 +555,6 @@ export const getTopSellingProducts = async () => {
   }
 };
 
-
 export const getInvoiceById = async (id) => {
   try {
     await connectDB();
@@ -581,112 +589,73 @@ export const getInvoiceById = async (id) => {
     };
   }
 };
+// getProductSalesReport.js
 export const getProductSalesReport = async (req, res) => {
   try {
     await connectDB();
-    // Parse time frame or date range from request
     const { timeFrame, startDate, endDate } = req.query;
-
-    let dateFilter = {};
     const today = new Date();
+    let dateFilter = {};
 
-    // Set date range based on timeFrame parameter
     if (timeFrame) {
-      const todayStr = today.toISOString().split("T")[0]; // Format: YYYY-MM-DD
-
       switch (timeFrame) {
-        case "today":
-          dateFilter = { $gte: todayStr, $lte: todayStr };
+        case "today": {
+          const day = today.toISOString().split("T")[0];
+          dateFilter = { $gte: day, $lte: day };
           break;
-
+        }
         case "thisWeek": {
           const startOfWeek = new Date(today);
           startOfWeek.setDate(today.getDate() - today.getDay());
           const endOfWeek = new Date(today);
           endOfWeek.setDate(today.getDate() + (6 - today.getDay()));
-
           dateFilter = {
             $gte: startOfWeek.toISOString().split("T")[0],
             $lte: endOfWeek.toISOString().split("T")[0],
           };
           break;
         }
-
         case "thisMonth": {
-          const startOfMonth = new Date(
-            today.getFullYear(),
-            today.getMonth(),
-            1
-          );
-          const endOfMonth = new Date(
-            today.getFullYear(),
-            today.getMonth() + 1,
-            0
-          );
-
+          const start = new Date(today.getFullYear(), today.getMonth(), 1);
+          const end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
           dateFilter = {
-            $gte: startOfMonth.toISOString().split("T")[0],
-            $lte: endOfMonth.toISOString().split("T")[0],
+            $gte: start.toISOString().split("T")[0],
+            $lte: end.toISOString().split("T")[0],
           };
           break;
         }
-
         case "thisYear": {
-          const startOfYear = new Date(today.getFullYear(), 0, 1);
-          const endOfYear = new Date(today.getFullYear(), 11, 31);
-
+          const start = new Date(today.getFullYear(), 0, 1);
+          const end = new Date(today.getFullYear(), 11, 31);
           dateFilter = {
-            $gte: startOfYear.toISOString().split("T")[0],
-            $lte: endOfYear.toISOString().split("T")[0],
+            $gte: start.toISOString().split("T")[0],
+            $lte: end.toISOString().split("T")[0],
           };
           break;
         }
-
-        default:
-          // Default to this month if invalid timeFrame
-          const defaultStart = new Date(
-            today.getFullYear(),
-            today.getMonth(),
-            1
-          );
-          const defaultEnd = new Date(
-            today.getFullYear(),
-            today.getMonth() + 1,
-            0
-          );
-
+        default: {
+          const start = new Date(today.getFullYear(), today.getMonth(), 1);
+          const end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
           dateFilter = {
-            $gte: defaultStart.toISOString().split("T")[0],
-            $lte: defaultEnd.toISOString().split("T")[0],
+            $gte: start.toISOString().split("T")[0],
+            $lte: end.toISOString().split("T")[0],
           };
+        }
       }
     } else if (startDate && endDate) {
-      // Use custom date range if provided
       dateFilter = { $gte: startDate, $lte: endDate };
     } else {
-      // Default to this month if no parameters provided
-      const defaultStart = new Date(today.getFullYear(), today.getMonth(), 1);
-      const defaultEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-
+      const start = new Date(today.getFullYear(), today.getMonth(), 1);
+      const end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
       dateFilter = {
-        $gte: defaultStart.toISOString().split("T")[0],
-        $lte: defaultEnd.toISOString().split("T")[0],
+        $gte: start.toISOString().split("T")[0],
+        $lte: end.toISOString().split("T")[0],
       };
     }
 
-    // Run the aggregation pipeline
     const productSalesData = await Invoice.aggregate([
-      // Match invoices within date range and not cancelled
-      {
-        $match: {
-          date: dateFilter,
-          isCancelled: false,
-        },
-      },
-      // Unwind the items array
+      { $match: { isCancelled: false, date: dateFilter } },
       { $unwind: "$items" },
-
-      // Lookup product details to get the category
       {
         $lookup: {
           from: "products",
@@ -695,152 +664,101 @@ export const getProductSalesReport = async (req, res) => {
           as: "productDetails",
         },
       },
-
-      // Add a field for the product category
       {
         $addFields: {
           productCategory: { $arrayElemAt: ["$productDetails.category", 0] },
         },
       },
-
-      // Group by product ID
       {
         $group: {
           _id: "$items.product",
           productName: { $first: "$items.name" },
+          category: { $first: "$productCategory" },
+          totalRevenue: { $sum: "$items.total" },
+          totalInvoices: { $addToSet: "$_id" },
           totalQuantity: {
             $sum: {
               $divide: [
                 {
                   $cond: [
-                    // Case 1: bulk or 550g/l → 1000g per unit
                     {
-                      $or: [
-                        { $eq: [{ $toLower: "$productCategory" }, "bulk"] },
-                        { $eq: [{ $toLower: "$productCategory" }, "550g/l"] },
-                      ],
+                      $regexMatch: {
+                        input: "$productCategory",
+                        regex: /\d+/, // If category contains a number
+                      },
                     },
-                    { $multiply: ["$items.quantity", 1000] },
-
-                    // Case 2: sample Xg (e.g., "sample 20g")
                     {
-                      $cond: [
+                      $multiply: [
+                        "$items.quantity",
                         {
-                          $regexMatch: {
-                            input: "$productCategory",
-                            regex: /^sample \d+g$/i,
+                          $toInt: {
+                            $getField: {
+                              field: "match",
+                              input: {
+                                $arrayElemAt: [
+                                  {
+                                    $regexFindAll: {
+                                      input: "$productCategory",
+                                      regex: /\d+/,
+                                    },
+                                  },
+                                  0,
+                                ],
+                              },
+                            },
                           },
                         },
-                        {
-                          $multiply: [
-                            "$items.quantity",
-                            {
-                              $toInt: {
-                                $replaceAll: {
-                                  input: {
-                                    $arrayElemAt: [
-                                      { $split: ["$productCategory", " "] },
-                                      1,
-                                    ],
-                                  },
-                                  find: "g",
-                                  replacement: "",
-                                },
-                              },
-                            },
-                          ],
-                        },
-
-                        // Case 3: Xg (e.g., "250g")
-                        {
-                          $cond: [
-                            {
-                              $regexMatch: {
-                                input: "$productCategory",
-                                regex: /^\d+g$/i,
-                              },
-                            },
-                            {
-                              $multiply: [
-                                "$items.quantity",
-                                {
-                                  $toInt: {
-                                    $replaceAll: {
-                                      input: "$productCategory",
-                                      find: "g",
-                                      replacement: "",
-                                    },
-                                  },
-                                },
-                              ],
-                            },
-
-                            // Case 4: sample → assume 1000g
-                            {
-                              $cond: [
-                                {
-                                  $eq: [
-                                    { $toLower: "$productCategory" },
-                                    "sample",
-                                  ],
-                                },
-                                { $multiply: ["$items.quantity", 1000] },
-
-                                // ✅ Case 5: tea bag → assume 2g per unit
-                                {
-                                  $cond: [
-                                    {
-                                      $eq: [
-                                        { $toLower: "$productCategory" },
-                                        "tea bag",
-                                      ],
-                                    },
-                                    { $multiply: ["$items.quantity", 2] },
-
-                                    // Default: use raw quantity
-                                    "$items.quantity",
-                                  ],
-                                },
-                              ],
-                            },
-                          ],
-                        },
                       ],
+                    },
+                    {
+                      $switch: {
+                        branches: [
+                          {
+                            case: { $eq: [{ $toLower: "$productCategory" }, "bulk"] },
+                            then: { $multiply: ["$items.quantity", 1000] },
+                          },
+                          {
+                            case: { $eq: [{ $toLower: "$productCategory" }, "550g/l"] },
+                            then: { $multiply: ["$items.quantity", 1000] },
+                          },
+                          {
+                            case: { $eq: [{ $toLower: "$productCategory" }, "sample"] },
+                            then: { $multiply: ["$items.quantity", 1000] },
+                          },
+                          {
+                            case: { $eq: [{ $toLower: "$productCategory" }, "tea bag"] },
+                            then: { $multiply: ["$items.quantity", 2] },
+                          },
+                        ],
+                        default: "$items.quantity",
+                      },
                     },
                   ],
                 },
-                1000, // Convert grams to kilograms
+                1000,
               ],
             },
           },
-          totalRevenue: { $sum: "$items.total" },
-          totalInvoices: { $addToSet: "$_id" }, // Collect unique invoice IDs
-          category: { $first: "$productCategory" }, // Save category for projection
         },
       },
-
-      // Format the output
       {
         $project: {
           _id: 0,
           productId: "$_id",
           productName: 1,
           category: 1,
-          totalQuantity: 1,
           totalRevenue: 1,
-          totalInvoices: { $size: "$totalInvoices" }, // Count unique invoices
+          totalInvoices: { $size: "$totalInvoices" },
+          totalQuantity: 1,
         },
       },
-
-      // Sort by revenue in descending order
       { $sort: { totalRevenue: -1 } },
     ]);
 
-    // Calculate overall totals for summary stats
     const totalStats = productSalesData.reduce(
       (acc, item) => {
         acc.totalRevenue += item.totalRevenue;
-        acc.totalQuantity += item.totalQuantity; // Now in kilograms
+        acc.totalQuantity += item.totalQuantity;
         acc.totalInvoices += item.totalInvoices;
         return acc;
       },
@@ -855,7 +773,7 @@ export const getProductSalesReport = async (req, res) => {
         startDate: dateFilter.$gte,
         endDate: dateFilter.$lte,
       },
-      unit: "kg", // Add this to indicate that quantities are in kilograms
+      unit: "kg",
     });
   } catch (error) {
     console.error("Error generating product sales report:", error);
