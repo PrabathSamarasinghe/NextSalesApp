@@ -30,7 +30,7 @@ export default function TopSellingProductsPage() {
         setProducts(data);
         
         // Extract unique categories
-        const categories = ['all', ...new Set(data.map(product => product.category))];
+        const categories = ['all', ...new Set(data?.map(product => product.category))];
         setUniqueCategories(categories);
         
       } catch (error) {
@@ -61,14 +61,14 @@ export default function TopSellingProductsPage() {
   };
 
   // Calculate totals for summary cards
-  const totalSales = products.reduce((sum, product) => sum + product.totalQuantity, 0);
-  const totalRevenue = products.reduce((sum, product) => sum + product.totalRevenue, 0);
+  const totalSales = products?.reduce((sum, product) => sum + product.totalQuantity, 0);
+  const totalRevenue = products?.reduce((sum, product) => sum + product.totalRevenue, 0);
   const avgOrderValue = totalSales > 0 ? totalRevenue / totalSales : 0;
   
   // Get filtered and sorted products
   const filteredProducts = filterCategory === 'all' 
     ? products 
-    : products.filter(product => product.category === filterCategory);
+    : products?.filter(product => product.category === filterCategory);
     
   const sortedProducts = [...filteredProducts].sort((a, b) => {
     if (a[sortConfig.key] < b[sortConfig.key]) {
@@ -81,7 +81,7 @@ export default function TopSellingProductsPage() {
   });
 
   // Calculate percentage of total for each product (for visualization)
-  const maxRevenue = Math.max(...products.map(product => product.totalRevenue));
+  const maxRevenue = Math.max(...products?.map(product => product.totalRevenue));
 
   if (isLoading) {
     return (
@@ -224,7 +224,7 @@ export default function TopSellingProductsPage() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {sortedProducts.map((product) => (
+              {sortedProducts?.map((product) => (
                 <tr key={product.productId} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                     {product.productName}
@@ -273,7 +273,7 @@ export default function TopSellingProductsPage() {
           <div>
             <h3 className="text-md font-medium text-gray-700 mb-4">Units Sold by Category</h3>
             {uniqueCategories
-              .filter(category => category !== 'all')
+              ?.filter(category => category !== 'all')
               .map(category => {
                 const categoryProducts = products.filter(product => product.category === category);
                 const categorySales = categoryProducts.reduce((sum, product) => sum + product.totalQuantity, 0);
@@ -302,7 +302,7 @@ export default function TopSellingProductsPage() {
           <div>
             <h3 className="text-md font-medium text-gray-700 mb-4">Revenue by Category</h3>
             {uniqueCategories
-              .filter(category => category !== 'all')
+              ?.filter(category => category !== 'all')
               .map(category => {
                 const categoryProducts = products.filter(product => product.category === category);
                 const categoryRevenue = categoryProducts.reduce((sum, product) => sum + product.totalRevenue, 0);

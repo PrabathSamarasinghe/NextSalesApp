@@ -13,6 +13,7 @@ import {
   ShoppingCart,
   Trash2,
   Clock,
+  DollarSign,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useParams } from "next/navigation";
@@ -58,6 +59,8 @@ export default function CustomerDetails() {
     epfNumber: "",
     totalSpent: 0,
   });
+
+  const [advancePayment, setAdvancePayment] = useState(0);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(6);
@@ -128,6 +131,24 @@ export default function CustomerDetails() {
         if (response.ok) {
           const data = await response.json();
           setInvoices(data.invoices);
+          const totalPending = data.invoices.reduce(
+            (sum: number, invoice: Invoice) => {
+              return invoice.isPaid ? sum : sum + Number(invoice.total);
+            },
+            0
+          );
+
+          const totalAdvance = data.invoices.reduce(
+            (sum: number, invoice: Invoice) => {
+              return (invoice as any).advance
+                ? sum + (invoice as any).advance
+                : sum;
+            },
+            0
+          );
+
+          // Set states only once after calculation is complete
+          setAdvancePayment(totalPending - totalAdvance);
         } else {
           console.error("Failed to fetch invoices");
         }
@@ -159,6 +180,8 @@ export default function CustomerDetails() {
         setIsLoading(false);
       }
     };
+
+    const fetchAdvancePayment = async () => {};
 
     if (customer_id) {
       fetchRole();
@@ -277,16 +300,39 @@ export default function CustomerDetails() {
                   <span className="text-sm">Customer since Jan 2025</span>
                 </div>
               </div>
-              <div className="mt-4 md:mt-0 bg-white p-4 rounded-lg shadow-sm border border-gray-100">
-                <div className="text-sm font-medium text-gray-600 mb-1">
-                  Total Purchase Value
+              <div className="mt-4 md:mt-0 sm:flex items-center space-x-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-100 hover:border-blue-200 transition-colors duration-200">
+                <div className="flex items-center">
+                  <div className="p-2 bg-blue-50 rounded-full">
+                    <DollarSign size={18} className="text-blue-700" />
+                  </div>
+                  <h3 className="ml-3 text-sm font-medium text-gray-700">
+                    Total Purchase Value
+                  </h3>
                 </div>
-                <div className="text-2xl font-bold text-blue-800">
+                <p className="mt-3 text-gray-800 font-medium">
                   Rs.
                   {(customer.totalSpent || 0).toLocaleString("en-IN", {
                     minimumFractionDigits: 2,
                   })}
+                </p>
+              </div>
+              <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-100 hover:border-blue-200 transition-colors duration-200">
+                <div className="flex items-center">
+                  <div className="p-2 bg-blue-50 rounded-full">
+                    <DollarSign size={18} className="text-blue-700" />
+                  </div>
+                  <h3 className="ml-3 text-sm font-medium text-gray-700">
+                    Advance Payments
+                  </h3>
                 </div>
+                <p className="mt-3 text-gray-800 font-medium">
+                  Rs.
+                  {advancePayment.toLocaleString("en-IN", {
+                    minimumFractionDigits: 2,
+                  })}
+                </p>
+              </div>
               </div>
             </div>
           </div>
@@ -320,7 +366,8 @@ export default function CustomerDetails() {
                   {customer.phone || "Not provided"}
                 </p>
               </div>
-
+              
+              
               <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-100 hover:border-blue-200 transition-colors duration-200">
                 <div className="flex items-center">
                   <div className="p-2 bg-blue-50 rounded-full">

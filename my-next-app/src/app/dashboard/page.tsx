@@ -10,12 +10,13 @@ import {
   DollarSign,
   Plus,
   LogOut,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import AddCustomer from "@/components/AddCustomer";
 import LoadingPage from "@/components/loadingPage";
-
 
 interface Stats {
   totalSales: string;
@@ -38,7 +39,6 @@ export default function Dashboard() {
     activeCustomers: 0,
     totalProducts: 0,
   });
-  //   const loadingContext = useContext(LoadingContext);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   interface Invoice {
@@ -57,17 +57,13 @@ export default function Dashboard() {
     category: string;
   }
   const [recentInvoices, setRecentInvoices] = useState<Invoice[]>([]);
-
   const [topProducts, setTopProducts] = useState<TopProduct[]>([]);
-
   const router = useRouter();
-
   const [loading, setLoading] = useState(true);
 
   useLayoutEffect(() => {
     const fetchRole = async () => {
       try{
-
         const response = await fetch("/api/admin/auth");
         const data = await response.json();
         setRole(data.decoded.role)
@@ -80,7 +76,6 @@ export default function Dashboard() {
         const response = await fetch("/api/admin/stats");
         const data = await response.json();
 
-        // Format the new stats data
         const newStats = {
           totalSales: `Rs.${data.totalRevenue
             .toFixed(2)
@@ -90,15 +85,12 @@ export default function Dashboard() {
           totalProducts: data.totalProducts,
         };
 
-        // Update the stats state
         setStats(newStats);
 
-        // Calculate percentages based on previous stats from localStorage
         const savedStats = localStorage.getItem("stats");
         if (savedStats) {
           const parsedStats = JSON.parse(savedStats);
 
-          // Helper function to safely calculate percentage change
           const calculatePercentage = (current: number, previous: string) => {
             const prev =
               typeof previous === "string"
@@ -129,7 +121,6 @@ export default function Dashboard() {
           });
         }
 
-        // Save the raw data for future percentage calculations
         setTimeout(() => {
           localStorage.setItem(
             "stats",
@@ -204,53 +195,74 @@ export default function Dashboard() {
     fetchStats();
     fetchTopProducts();
   }, []);
-    if (loading) {
-      return <LoadingPage />;
-    }
+
+  if (loading) {
+    return <LoadingPage />;
+  }
+
+  const renderPercentageChange = (percentage: number) => {
+    const isPositive = percentage > 0;
+    const Icon = isPositive ? ArrowUp : ArrowDown;
+    const colorClass = isPositive ? "text-emerald-600" : "text-red-500";
+    
+    return (
+      <div className={`flex items-center ${colorClass}`}>
+        <Icon className="w-3 h-3 mr-1" />
+        <span className="text-xs font-semibold">
+          {Math.abs(percentage)}%
+        </span>
+      </div>
+    );
+  };
 
   return (
-    <div className="min-h-screen bg-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8">
-          <div className="mb-4 sm:mb-0">
-            <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-            <p className="text-gray-600 mt-1">
-              Welcome back! Here is an overview of your business.
-            </p>
-          </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
+      <div className="max-w-screen mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header Section */}
+        <div className="mb-10">
+          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between">
+            <div className="mb-6 lg:mb-0">
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-slate-900 to-slate-600 bg-clip-text text-transparent">
+                Dashboard
+              </h1>
+              <p className="text-slate-600 mt-2 text-lg">
+                Welcome back! Here's an overview of your business performance.
+              </p>
+            </div>
 
-          <div className="bg-white p-4 rounded-lg  w-full">
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:justify-end">
+            {/* Action Buttons */}
+            <div className="flex flex-wrap gap-3">
               <Link
                 href="/sales-report"
-                className="inline-flex items-center justify-center px-4 py-2.5 text-sm font-medium bg-slate-800 text-white rounded-md hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 transition-colors duration-200 shadow"
+                className="inline-flex items-center px-5 py-2.5 text-sm font-medium bg-white text-slate-700 rounded-xl hover:bg-slate-50 border border-slate-200 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 transition-all duration-200 shadow-sm hover:shadow-md"
               >
                 <BarChart2 className="w-4 h-4 mr-2" />
                 Sales Report
               </Link>
+              
               {role === "admin" && (
                 <>
                   <Link
                     href="/newInvoice"
-                    className="inline-flex items-center justify-center px-4 py-2.5 text-sm font-medium bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-200 shadow"
+                    className="inline-flex items-center px-5 py-2.5 text-sm font-medium bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 shadow-lg hover:shadow-xl"
                   >
                     <Plus className="w-4 h-4 mr-2" />
                     New Invoice
                   </Link>
                   <button
                     onClick={() => setIsModalOpen(true)}
-                    className="inline-flex items-center justify-center px-4 py-2.5 text-sm font-medium bg-emerald-600 text-white rounded-md hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition-colors duration-200 shadow"
+                    className="inline-flex items-center px-5 py-2.5 text-sm font-medium bg-gradient-to-r from-emerald-600 to-emerald-700 text-white rounded-xl hover:from-emerald-700 hover:to-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition-all duration-200 shadow-lg hover:shadow-xl"
                   >
                     <Plus className="w-4 h-4 mr-2" />
                     New Customer
                   </button>
-                    <button
+                  <button
                     onClick={() => router.push("/admin-requests")}
-                    className="inline-flex items-center justify-center px-4 py-2.5 text-sm font-medium bg-slate-800 text-white rounded-md hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 transition-colors duration-200 shadow"
-                    >
+                    className="inline-flex items-center px-5 py-2.5 text-sm font-medium bg-white text-slate-700 rounded-xl hover:bg-slate-50 border border-slate-200 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 transition-all duration-200 shadow-sm hover:shadow-md"
+                  >
                     <Users className="w-4 h-4 mr-2" />
                     Admin Requests
-                    </button>
+                  </button>
                 </>
               )}
               <button
@@ -264,7 +276,7 @@ export default function Dashboard() {
                   });
                   router.push("/");
                 }}
-                className="inline-flex items-center justify-center px-4 py-2.5 text-sm font-medium bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors duration-200 shadow"
+                className="inline-flex items-center px-5 py-2.5 text-sm font-medium bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl hover:from-red-700 hover:to-red-800 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-all duration-200 shadow-lg hover:shadow-xl"
               >
                 <LogOut className="w-4 h-4 mr-2" />
                 Logout
@@ -274,162 +286,138 @@ export default function Dashboard() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition duration-150 ease-in-out">
-            <div className="flex items-start">
-              <div className="p-2 bg-blue-50 rounded-lg flex-shrink-0">
-                <DollarSign className="text-blue-600 w-5 h-5" />
-              </div>
-              <div className="ml-3">
-                <h3 className="text-sm font-medium text-gray-600">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+          <div className="group bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-white/20 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <div className="p-3 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl mb-4 w-fit">
+                  <DollarSign className="text-blue-600 w-6 h-6" />
+                </div>
+                <h3 className="text-sm font-medium text-slate-600 mb-2">
                   Total Sales
                 </h3>
-                <div className="flex items-baseline flex-wrap">
-                  <p className="text-xl font-bold text-gray-900 break-all">
-                    {stats.totalSales}
-                  </p>
-                  <span className="ml-2 text-xs font-medium text-green-600">
-                    {presentages.totalSales > 0
-                      ? `+${presentages.totalSales}%`
-                      : `${presentages.totalSales}%`}
-                  </span>
-                </div>
+                <p className="text-2xl font-bold text-slate-900 mb-2 break-all">
+                  {stats.totalSales}
+                </p>
+                {renderPercentageChange(presentages.totalSales)}
               </div>
             </div>
           </div>
 
           <div
-            className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition duration-150 ease-in-out cursor-pointer"
+            className="group bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-white/20 hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer"
             onClick={() => router.push("/invoices")}
           >
-            <div className="flex items-start">
-              <div className="p-2 bg-green-50 rounded-lg flex-shrink-0">
-                <FileText className="text-green-600 w-5 h-5" />
-              </div>
-              <div className="ml-3">
-                <h3 className="text-sm font-medium text-gray-600">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <div className="p-3 bg-gradient-to-br from-green-50 to-green-100 rounded-xl mb-4 w-fit">
+                  <FileText className="text-green-600 w-6 h-6" />
+                </div>
+                <h3 className="text-sm font-medium text-slate-600 mb-2">
                   Invoices Issued
                 </h3>
-                <div className="flex items-baseline flex-wrap">
-                  <p className="text-xl font-bold text-gray-900">
-                    {stats.invoicesIssued}
-                  </p>
-                  <span className="ml-2 text-xs font-medium text-green-600">
-                    {presentages.invoicesIssued > 0
-                      ? `+${presentages.invoicesIssued}%`
-                      : `${presentages.invoicesIssued}%`}
-                  </span>
-                </div>
+                <p className="text-2xl font-bold text-slate-900 mb-2">
+                  {stats.invoicesIssued}
+                </p>
+                {renderPercentageChange(presentages.invoicesIssued)}
               </div>
             </div>
           </div>
 
           <div
-            className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition duration-150 ease-in-out cursor-pointer"
+            className="group bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-white/20 hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer"
             onClick={() => router.push("/customers")}
           >
-            <div className="flex items-start">
-              <div className="p-2 bg-purple-50 rounded-lg flex-shrink-0">
-                <Users className="text-purple-600 w-5 h-5" />
-              </div>
-              <div className="ml-3">
-                <h3 className="text-sm font-medium text-gray-600">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <div className="p-3 bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl mb-4 w-fit">
+                  <Users className="text-purple-600 w-6 h-6" />
+                </div>
+                <h3 className="text-sm font-medium text-slate-600 mb-2">
                   Active Customers
                 </h3>
-                <div className="flex items-baseline flex-wrap">
-                  <p className="text-xl font-bold text-gray-900">
-                    {stats.activeCustomers}
-                  </p>
-                  <span className="ml-2 text-xs font-medium text-green-600">
-                    {presentages.activeCustomers > 0
-                      ? `+${presentages.activeCustomers}%`
-                      : `${presentages.activeCustomers}%`}
-                  </span>
-                </div>
+                <p className="text-2xl font-bold text-slate-900 mb-2">
+                  {stats.activeCustomers}
+                </p>
+                {renderPercentageChange(presentages.activeCustomers)}
               </div>
             </div>
           </div>
 
           <div
-            className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition duration-150 ease-in-out cursor-pointer"
+            className="group bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-white/20 hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer"
             onClick={() => router.push("/products")}
           >
-            <div className="flex items-start">
-              <div className="p-2 bg-amber-50 rounded-lg flex-shrink-0">
-                <Package className="text-amber-600 w-5 h-5" />
-              </div>
-              <div className="ml-3">
-                <h3 className="text-sm font-medium text-gray-600">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <div className="p-3 bg-gradient-to-br from-amber-50 to-amber-100 rounded-xl mb-4 w-fit">
+                  <Package className="text-amber-600 w-6 h-6" />
+                </div>
+                <h3 className="text-sm font-medium text-slate-600 mb-2">
                   Total Products
                 </h3>
-                <div className="flex items-baseline flex-wrap">
-                  <p className="text-xl font-bold text-gray-900">
-                    {stats.totalProducts}
-                  </p>
-                  <span className="ml-2 text-xs font-medium text-blue-600">
-                    {presentages.totalProducts > 0
-                      ? `+${presentages.totalProducts}%`
-                      : `${presentages.totalProducts}%`}
-                  </span>
-                </div>
+                <p className="text-2xl font-bold text-slate-900 mb-2">
+                  {stats.totalProducts}
+                </p>
+                {renderPercentageChange(presentages.totalProducts)}
               </div>
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Content Grid */}
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
           {/* Recent Invoices */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-            <div className="px-6 py-5 border-b border-gray-200 flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-semibold text-gray-900">
-                  Recent Invoices
-                </h2>
-                <p className="text-sm text-gray-600 mt-1">
-                  Latest invoice activity
-                </p>
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-white/20 overflow-hidden">
+            <div className="px-8 py-6 border-b border-slate-100">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-semibold text-slate-900">
+                    Recent Invoices
+                  </h2>
+                  <p className="text-sm text-slate-600 mt-1">
+                    Latest invoice activity from your business
+                  </p>
+                </div>
+                <button
+                  onClick={() => router.push("/invoices")}
+                  className="text-blue-600 text-sm font-medium flex items-center hover:text-blue-700 transition-colors duration-200 bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-xl"
+                >
+                  View All <ChevronRight size={16} className="ml-1" />
+                </button>
               </div>
-              <button
-                onClick={() => router.push("/invoices")}
-                className="text-blue-600 text-sm font-medium flex items-center hover:text-blue-700 transition duration-150 ease-in-out"
-              >
-                View All <ChevronRight size={16} className="ml-1" />
-              </button>
             </div>
             <div className="p-6">
-              <ul className="divide-y divide-gray-200">
+              <div className="space-y-4">
                 {recentInvoices.map((invoice) => (
-                  <li
+                  <div
                     key={invoice.id}
-                    className="py-4 hover:bg-gray-50 transition duration-150 ease-in-out rounded-lg px-2"
+                    className="p-4 hover:bg-slate-50 transition-colors duration-200 rounded-xl border border-transparent hover:border-slate-200"
                   >
                     <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">
+                      <div className="flex-1">
+                        <p className="font-medium text-slate-900 mb-1">
                           {invoice.customer}
                         </p>
-                        <div className="flex items-center mt-1">
-                          <span className="text-xs text-gray-500">
+                        <div className="flex items-center text-xs text-slate-500 space-x-2">
+                          <span className="bg-slate-100 px-2 py-1 rounded-md">
                             {invoice.id}
                           </span>
-
-                          <span className="mx-2 text-gray-300">•</span>
-                          <span className="text-xs text-gray-500">
-                            {invoice.date}
-                          </span>
+                          <span>•</span>
+                          <span>{invoice.date}</span>
                           {invoice.isCancelled && (
-                            <span className="text-xs text-red-500 ml-2 font-medium">
+                            <span className="text-red-500 font-medium bg-red-50 px-2 py-1 rounded-md">
                               Cancelled
                             </span>
                           )}
                         </div>
                       </div>
-                      <div className="flex items-center">
-                        <span className="text-sm font-medium text-gray-900 mr-4">
+                      <div className="flex items-center space-x-4">
+                        <span className="font-semibold text-slate-900">
                           {invoice.amount}
                         </span>
                         <span
-                          className={`text-xs px-2.5 py-1 rounded-full font-medium ${
+                          className={`text-xs px-3 py-1.5 rounded-full font-medium ${
                             invoice.status
                               ? "bg-green-100 text-green-800"
                               : "bg-yellow-100 text-yellow-800"
@@ -439,60 +427,68 @@ export default function Dashboard() {
                         </span>
                       </div>
                     </div>
-                  </li>
+                  </div>
                 ))}
-              </ul>
+              </div>
             </div>
           </div>
 
           {/* Top Products */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-            <div className="px-6 py-5 border-b border-gray-200 flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-semibold text-gray-900">
-                  Top Products
-                </h2>
-                <p className="text-sm text-gray-600 mt-1">
-                  Best performing products
-                </p>
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-white/20 overflow-hidden">
+            <div className="px-8 py-6 border-b border-slate-100">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-semibold text-slate-900">
+                    Top Products
+                  </h2>
+                  <p className="text-sm text-slate-600 mt-1">
+                    Best performing products this period
+                  </p>
+                </div>
+                <button
+                  onClick={() => router.push("/top-sold")}
+                  className="text-blue-600 text-sm font-medium flex items-center hover:text-blue-700 transition-colors duration-200 bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-xl"
+                >
+                  View All <ChevronRight size={16} className="ml-1" />
+                </button>
               </div>
-              <button
-                onClick={() => router.push("/top-sold")}
-                className="text-blue-600 text-sm font-medium flex items-center hover:text-blue-700 transition duration-150 ease-in-out"
-              >
-                View All <ChevronRight size={16} className="ml-1" />
-              </button>
             </div>
             <div className="p-6">
-              <ul className="divide-y divide-gray-200">
+              <div className="space-y-4">
                 {topProducts.map((product, index) => (
-                  <li
+                  <div
                     key={index}
-                    className="py-4 hover:bg-gray-50 transition duration-150 ease-in-out rounded-lg px-2"
+                    className="p-4 hover:bg-slate-50 transition-colors duration-200 rounded-xl border border-transparent hover:border-slate-200"
                   >
                     <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">
-                          {product.name}
-                          <span className="text-xs text-gray-500 ml-2">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-3 mb-2">
+                          <span className="w-6 h-6 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center text-white text-xs font-bold">
+                            {index + 1}
+                          </span>
+                          <p className="font-medium text-slate-900">
+                            {product.name}
+                          </p>
+                          <span className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded-md">
                             {product.category}
                           </span>
-                        </p>
-                        <p className="text-xs text-gray-500 mt-1">
-                          {product.quantity}{" "} kgs
-                          sold
+                        </div>
+                        <p className="text-sm text-slate-600 ml-9">
+                          {product.quantity} kgs sold
                         </p>
                       </div>
-                      <div className="flex items-center">
-                        <span className="text-sm font-medium text-gray-900">
+                      <div className="flex items-center space-x-3">
+                        <span className="font-semibold text-slate-900">
                           {product.sales}
                         </span>
-                        <TrendingUp className="w-4 h-4 text-green-500 ml-2" />
+                        <div className="p-2 bg-green-50 rounded-lg">
+                          <TrendingUp className="w-4 h-4 text-green-600" />
+                        </div>
                       </div>
                     </div>
-                  </li>
+                  </div>
                 ))}
-              </ul>
+              </div>
             </div>
           </div>
         </div>
