@@ -17,6 +17,7 @@ import {
   Clock,
   X,
   Ban,
+  Edit3,
 } from "lucide-react";
 
 import { useRouter } from "next/navigation";
@@ -593,6 +594,15 @@ export default function InvoicesList() {
                               >
                                 <Eye className="h-4 w-4" />
                               </button>
+                              {role === "admin" && !invoice.isCancelled && (
+                                <Link
+                                  href={`/updateInvoice/${invoice._id}`}
+                                  className="p-2 text-emerald-600 hover:text-emerald-900 hover:bg-emerald-100 rounded-lg transition-all duration-200"
+                                  title="Edit Invoice"
+                                >
+                                  <Edit3 className="h-4 w-4" />
+                                </Link>
+                              )}
                               {role === "admin" && !invoice.isCancelled && (
                                 <button
                                   className="p-2 text-amber-600 hover:text-amber-900 hover:bg-amber-100 rounded-lg transition-all duration-200"

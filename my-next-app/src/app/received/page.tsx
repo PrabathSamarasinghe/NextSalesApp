@@ -6,6 +6,7 @@ import {
   ArrowUpDown,
   Eye,
   ArrowLeft,
+  Edit3,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Pagination from "@/components/Pagination";
@@ -274,7 +275,7 @@ export default function ReceivedInvoicesList() {
                       </th>
                       <th
                         scope="col"
-                        className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
                       >
                         Actions
                       </th>
@@ -306,14 +307,25 @@ export default function ReceivedInvoicesList() {
                               Rs. {invoice.total.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
                             </div>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <button
-                              className="text-blue-600 hover:text-blue-900 p-1 rounded-full hover:bg-blue-50 transition-colors duration-200"
-                              title="View"
-                              onClick={() => handleViewInvoice(invoice._id)}
-                            >
-                              <Eye className="h-5 w-5" />
-                            </button>
+                          <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                            <div className="flex items-center justify-center space-x-2">
+                              <button
+                                className="text-blue-600 hover:text-blue-900 p-1.5 rounded-full hover:bg-blue-50 transition-colors duration-200"
+                                title="View"
+                                onClick={() => handleViewInvoice(invoice._id)}
+                              >
+                                <Eye className="h-4 w-4" />
+                              </button>
+                              {role === "admin" && (
+                                <Link
+                                  href={`/update_recieved/${invoice._id}`}
+                                  className="text-emerald-600 hover:text-emerald-900 p-1.5 rounded-full hover:bg-emerald-50 transition-colors duration-200"
+                                  title="Edit Invoice"
+                                >
+                                  <Edit3 className="h-4 w-4" />
+                                </Link>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       ))

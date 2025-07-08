@@ -25,20 +25,46 @@ export const createInvoice = async (invoiceData) => {
 export const updateInvoice = async (invoiceId, invoiceData) => {
   try {
     await connectDB();
+
     const invoice = await Invoice.findById(invoiceId);
     if (!invoice) {
       return { status: 404, message: "Invoice not found" };
     }
+
+    const existingItems = invoice.items;
+
+    // Create a map of product ID to quantity for old invoice
+    const existingMap = new Map();
+    for (const item of existingItems) {
+      existingMap.set(item.product.toString(), item.quantity);
+    }
+
+    // Update stock based on new items
+    for (const newItem of invoiceData.items) {
+      const productId = newItem.product.toString();
+      const oldQty = existingMap.get(productId) || 0;
+      const newQty = newItem.quantity;
+
+      const stockChange = oldQty - newQty; // If positive, restock; if negative, deduct more
+      await Product.findByIdAndUpdate(productId, {
+        $inc: { stock: stockChange },
+      });
+    }
+
+    // Update the invoice object
     Object.assign(invoice, invoiceData);
     await invoice.save();
+
     return { status: 200, message: "Invoice updated successfully" };
   } catch (error) {
+    console.error("Invoice update failed:", error);
     return {
       status: 500,
       message: error.message,
     };
   }
 };
+
 
 export const getAllInvoices = async () => {
   try {

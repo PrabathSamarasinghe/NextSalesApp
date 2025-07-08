@@ -319,7 +319,7 @@ export default function CustomerDetails() {
                     <DollarSign size={18} className="text-blue-700" />
                   </div>
                   <h3 className="ml-3 text-sm font-medium text-gray-700">
-                    Advance Payments
+                    Pending Payments
                   </h3>
                 </div>
                 <p className="mt-3 text-gray-800 font-medium">

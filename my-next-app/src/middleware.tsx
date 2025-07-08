@@ -101,5 +101,6 @@ export const config = {
     '/received-invoice',
     '/admin-requests',
     '/updateInvoice/:path*',
+    '/update_recieved/:id',
   ],
 };

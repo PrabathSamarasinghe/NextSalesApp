@@ -1,10 +1,9 @@
 "use client";
-import { JSX, useState, useLayoutEffect } from "react";
+import { JSX, useState, useEffect } from "react";
 import { Save, Plus, Trash2, ArrowLeft, Check, X } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import LoadingPage from "@/components/loadingPage";
 
-// Define TypeScript interfaces
 interface InvoiceItem {
   id: number;
   name: string;
@@ -23,6 +22,7 @@ interface Product {
 }
 
 interface ReceivedInvoiceData {
+  _id?: string;
   invoiceNumber: string;
   date: string;
   supplier: string;
@@ -31,7 +31,6 @@ interface ReceivedInvoiceData {
   notes: string;
 }
 
-// New product interface
 interface NewProduct {
   name: string;
   category: string;
@@ -41,6 +40,9 @@ interface NewProduct {
 
 export default function ReceivedInvoiceEntry(): JSX.Element {
   const router = useRouter();
+  const params = useParams();
+  const id = params?.id as string;
+  const isEditing = Boolean(id && id !== 'new');
 
   const [products, setProducts] = useState<Product[]>([]);
   const [suppliers] = useState<{ _id: string; name: string }[]>([
@@ -48,9 +50,7 @@ export default function ReceivedInvoiceEntry(): JSX.Element {
     { _id: "2", name: "KAIRO Trading" },
   ]);
 
-  // New product modal state
-  const [showNewProductModal, setShowNewProductModal] =
-    useState<boolean>(false);
+  const [showNewProductModal, setShowNewProductModal] = useState<boolean>(false);
   const [newProduct, setNewProduct] = useState<NewProduct>({
     name: "",
     category: "",
@@ -63,101 +63,158 @@ export default function ReceivedInvoiceEntry(): JSX.Element {
   const [receivedInvoice, setReceivedInvoice] = useState<ReceivedInvoiceData>({
     invoiceNumber: "",
     date: new Date().toISOString().split("T")[0],
-    supplier: suppliers[0]?.name,
+    supplier: suppliers[0]?.name || "",
     items: [{ id: 1, name: "", product: "", quantity: 1, price: 0, total: 0 }],
     total: 0,
     notes: "",
   });
 
-  useLayoutEffect(() => {
-    const fetchProducts = async () => {
+  const [loading, setLoading] = useState<boolean>(true);
+  const [saving, setSaving] = useState<boolean>(false);
+
+  useEffect(() => {
+    const fetchInitialData = async () => {
       try {
-        const response = await fetch("/api/product/all");
-        const data = await response.json();
-        setProducts(data);
+        // Fetch products
+        const productsResponse = await fetch("/api/product/all");
+        if (!productsResponse.ok) {
+          throw new Error("Failed to fetch products");
+        }
+        const productsData = await productsResponse.json();
+        setProducts(productsData);
+
+        // If editing an existing invoice, fetch its data
+        if (isEditing) {
+          const invoiceResponse = await fetch(`/api/recievedInv/view`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ id }),
+          });
+          
+          if (!invoiceResponse.ok) {
+            throw new Error(`Failed to fetch invoice: ${invoiceResponse.status}`);
+          }
+          
+          const invoiceData = await invoiceResponse.json();
+          
+          // Map the API data to our state structure
+          const mappedData: ReceivedInvoiceData = {
+            _id: invoiceData._id,
+            invoiceNumber: invoiceData.invoiceNumber || "",
+            date: invoiceData.date ? invoiceData.date.split('T')[0] : new Date().toISOString().split("T")[0],
+            supplier: invoiceData.supplier || "",
+            items: invoiceData.items && invoiceData.items.length > 0 
+              ? invoiceData.items.map((item: any, index: number) => ({
+                  id: index + 1,
+                  name: item.product?.name || item.name || "",
+                  product: item.product?._id || item.product || "",
+                  quantity: item.quantity || 1,
+                  price: item.price || 0,
+                  total: (item.quantity || 1) * (item.price || 0),
+                }))
+              : [{ id: 1, name: "", product: "", quantity: 1, price: 0, total: 0 }],
+            total: invoiceData.total || 0,
+            notes: invoiceData.notes || "",
+          };
+          
+          setReceivedInvoice(mappedData);
+        } else {
+          // For new invoice, fetch next invoice number
+          try {
+            const invoiceNumResponse = await fetch("/api/recievedInv/nextNum");
+            if (invoiceNumResponse.ok) {
+              const invoiceNumData = await invoiceNumResponse.json();
+              setReceivedInvoice(prev => ({
+                ...prev,
+                invoiceNumber: invoiceNumData,
+              }));
+            }
+          } catch (error) {
+            console.error("Error fetching next invoice number:", error);
+            // Continue without setting invoice number
+          }
+        }
       } catch (error) {
-        console.error("Error fetching products:", error);
+        console.error("Error initializing data:", error);
+        alert(`Failed to load initial data: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      } finally {
+        setLoading(false);
       }
     };
 
-    const fetchNewInvoiceNumber = async () => {
-      try {
-        const response = await fetch("/api/recievedInv/nextNum");
-        const data = await response.json();
-        setReceivedInvoice((prev) => ({
-          ...prev,
-          invoiceNumber: data,
-        }));
-      } catch (error) {
-        console.error("Error fetching next invoice number:", error);
-        // If API doesn't exist yet, generate a placeholder
-        setReceivedInvoice((prev) => ({
-          ...prev,
-          invoiceNumber: `RECV-${Math.floor(Math.random() * 10000)}`,
-        }));
-      }
-    };
-
-    fetchProducts();
-    // fetchSuppliers();
-    fetchNewInvoiceNumber();
-  }, [receivedInvoice.items]);
+    fetchInitialData();
+  }, [id, isEditing]);
 
   const updateItemField = (
-    id: number,
-    _name: string,
+    itemId: number,
     field: keyof InvoiceItem,
     value: string | number
   ): void => {
-    const updatedItems = receivedInvoice.items.map((item) => {
-      if (item.id === id) {
-        const updatedItem = { ...item, [field]: value };
+    setReceivedInvoice(prev => {
+      const updatedItems = prev.items.map(item => {
+        if (item.id === itemId) {
+          const updatedItem = { ...item, [field]: value };
 
-        // If the product is being updated, automatically set the price and name
-        if (field === "product") {
-          const selectedProduct = products.find((p) => p._id === value);
-          if (selectedProduct) {
-            updatedItem.price = selectedProduct.price;
-            updatedItem.name = selectedProduct.name;
+          if (field === "product") {
+            const selectedProduct = products.find(p => p._id === value);
+            if (selectedProduct) {
+              updatedItem.price = selectedProduct.price;
+              updatedItem.name = selectedProduct.name;
+            }
           }
+
+          updatedItem.total = updatedItem.quantity * updatedItem.price;
+          return updatedItem;
         }
+        return item;
+      });
 
-        // Calculate the total for this item
-        updatedItem.total = updatedItem.quantity * updatedItem.price;
-        return updatedItem;
-      }
-      return item;
-    });
+      const total = updatedItems.reduce((sum, item) => sum + item.total, 0);
 
-    setReceivedInvoice({
-      ...receivedInvoice,
-      items: updatedItems,
+      return {
+        ...prev,
+        items: updatedItems,
+        total,
+      };
     });
   };
 
   const addItem = (): void => {
-    const newItem: InvoiceItem = {
-      id: receivedInvoice.items.length + 1,
-      name: "",
-      product: "",
-      quantity: 1,
-      price: 0,
-      total: 0,
-    };
-    setReceivedInvoice({
-      ...receivedInvoice,
-      items: [...receivedInvoice.items, newItem],
+    setReceivedInvoice(prev => {
+      const newId = prev.items.length > 0 
+        ? Math.max(...prev.items.map(item => item.id)) + 1 
+        : 1;
+      
+      return {
+        ...prev,
+        items: [
+          ...prev.items,
+          {
+            id: newId,
+            name: "",
+            product: "",
+            quantity: 1,
+            price: 0,
+            total: 0,
+          }
+        ]
+      };
     });
   };
 
-  const removeItem = (id: number): void => {
+  const removeItem = (itemId: number): void => {
     if (receivedInvoice.items.length > 1) {
-      const filteredItems = receivedInvoice.items.filter(
-        (item) => item.id !== id
-      );
-      setReceivedInvoice({
-        ...receivedInvoice,
-        items: filteredItems,
+      setReceivedInvoice(prev => {
+        const filteredItems = prev.items.filter(item => item.id !== itemId);
+        const total = filteredItems.reduce((sum, item) => sum + item.total, 0);
+        
+        return {
+          ...prev,
+          items: filteredItems,
+          total,
+        };
       });
     }
   };
@@ -169,90 +226,114 @@ export default function ReceivedInvoiceEntry(): JSX.Element {
     }).format(amount);
   };
 
-  const handleSupplierSelection = (supplierId: string) => {
-    setReceivedInvoice({
-      ...receivedInvoice,
-      supplier: supplierId,
-    });
-  };
-
-  const calculateTotal = (): number => {
-    const total = receivedInvoice.items.reduce(
-      (sum, item) => sum + item.total,
-      0
-    );
-    return total;
-  };
-
-  // Update total whenever items change
-  useLayoutEffect(() => {
-    const total = calculateTotal();
-    setReceivedInvoice((prev) => ({
+  const handleSupplierSelection = (supplierName: string) => {
+    setReceivedInvoice(prev => ({
       ...prev,
-      total: total,
+      supplier: supplierName,
     }));
-  }, [receivedInvoice.items]);
+  };
 
-  const [loading, setLoading] = useState<boolean>(false);
-  // Function to handle saving the received invoice
   const handleSaveReceivedInvoice = async () => {
-    // Validate if a supplier is selected
-    // if (!receivedInvoice.supplier) {
-    //   alert("Please select a supplier");
-    //   return;
-    // }
+    // Validation
+    if (!receivedInvoice.invoiceNumber.trim()) {
+      alert("Please enter an invoice number");
+      return;
+    }
 
-    // Validate if all items have products selected
-    if (receivedInvoice.items.some((item) => !item.product)) {
+    if (!receivedInvoice.supplier) {
+      alert("Please select a supplier");
+      return;
+    }
+
+    if (receivedInvoice.items.some(item => !item.product)) {
       alert("Please select products for all invoice items");
       return;
     }
 
-    // Validate if invoice has items
     if (receivedInvoice.items.length === 0) {
       alert("Please add at least one item to the invoice");
       return;
     }
-    setLoading(true);
+
+    if (receivedInvoice.items.some(item => item.quantity <= 0)) {
+      alert("All items must have a quantity greater than 0");
+      return;
+    }
+
+    if (receivedInvoice.items.some(item => item.price < 0)) {
+      alert("All items must have a valid price");
+      return;
+    }
+
+    setSaving(true);
 
     try {
-      const response = await fetch("/api/recievedInv/create", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(receivedInvoice),
-      });
+      const requestBody = {
+        ...receivedInvoice,
+        items: receivedInvoice.items.map(item => ({
+          product: item.product,
+          quantity: item.quantity,
+          price: item.price,
+          total: item.total,
+          name: item.name
+        }))
+      };
+
+      let response;
+      if (isEditing) {
+        // Update existing invoice
+        response = await fetch(`/api/recievedInv/update`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            invoiceId: id,
+            invoiceData: requestBody,
+          }),
+        });
+      } else {
+        // Create new invoice
+        response = await fetch(`/api/recievedInv/create`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(requestBody),
+        });
+      }
 
       if (!response.ok) {
-        throw new Error("Network response was not ok");
+        const errorText = await response.text();
+        throw new Error(`Request failed: ${response.status} - ${errorText}`);
       }
 
       const data = await response.json();
-      console.log("Received invoice saved successfully:", data);
-      console.log("Received invoice data:", receivedInvoice);
-      setLoading(false);
-      alert("Received invoice saved successfully!");
+      alert(isEditing ? "Invoice updated successfully!" : "Invoice created successfully!");
       router.push("/products");
     } catch (error) {
-      console.error("Error saving received invoice:", error);
-      alert("Failed to save received invoice. Please try again.");
+      console.error("Error saving invoice:", error);
+      alert(`Failed to ${isEditing ? "update" : "create"} invoice: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setSaving(false);
     }
   };
 
-  // Function to handle adding a new product
   const handleAddNewProduct = async () => {
-    // Validate product fields
-    if (!newProduct.name) {
+    if (!newProduct.name.trim()) {
       setProductError("Product name is required");
       return;
     }
-    if (!newProduct.category) {
+    if (!newProduct.category.trim()) {
       setProductError("Category is required");
       return;
     }
     if (newProduct.price <= 0) {
       setProductError("Price must be greater than 0");
+      return;
+    }
+    if (newProduct.stock < 0) {
+      setProductError("Stock cannot be negative");
       return;
     }
 
@@ -269,15 +350,13 @@ export default function ReceivedInvoiceEntry(): JSX.Element {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to create product");
+        const errorText = await response.text();
+        throw new Error(`Failed to create product: ${response.status} - ${errorText}`);
       }
 
       const createdProduct = await response.json();
+      setProducts(prev => [...prev, createdProduct]);
 
-      // Add new product to the products list
-      setProducts([...products, createdProduct]);
-
-      // Close modal and reset form
       setShowNewProductModal(false);
       setNewProduct({
         name: "",
@@ -286,11 +365,10 @@ export default function ReceivedInvoiceEntry(): JSX.Element {
         stock: 0,
       });
 
-      // Show success message
       alert("Product added successfully!");
     } catch (error) {
       console.error("Error creating product:", error);
-      setProductError("Failed to create product. Please try again.");
+      setProductError(`Failed to create product: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsAddingProduct(false);
     }
@@ -304,7 +382,7 @@ export default function ReceivedInvoiceEntry(): JSX.Element {
     <div className="min-h-screen bg-gray-50">
       {/* New Product Modal */}
       {showNewProductModal && (
-        <div className="fixed inset-0 backdrop-blur-sm bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 backdrop-blur-sm bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
             <div className="flex justify-between items-center px-6 py-4 border-b border-gray-200">
               <h3 className="text-lg font-bold text-gray-800">
@@ -436,7 +514,7 @@ export default function ReceivedInvoiceEntry(): JSX.Element {
         <div className="bg-white rounded-lg shadow-lg border border-gray-100">
           <div className="flex justify-between items-center px-6 py-5 border-b border-gray-200 bg-gray-50 rounded-t-lg">
             <h2 className="text-2xl font-bold text-gray-800">
-              New Received Invoice
+              {isEditing ? "Update Received Invoice" : "Create Received Invoice"}
             </h2>
           </div>
 
@@ -444,23 +522,24 @@ export default function ReceivedInvoiceEntry(): JSX.Element {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Invoice Number
+                  Invoice Number*
                 </label>
                 <input
                   type="text"
                   value={receivedInvoice.invoiceNumber}
-                  className="w-full p-2.5 border border-gray-300 rounded-md bg-gray-50 text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full p-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   onChange={(e) =>
                     setReceivedInvoice({
                       ...receivedInvoice,
                       invoiceNumber: e.target.value,
                     })
                   }
+                  placeholder="Enter invoice number"
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Invoice Date
+                  Invoice Date*
                 </label>
                 <input
                   type="date"
@@ -476,11 +555,11 @@ export default function ReceivedInvoiceEntry(): JSX.Element {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Supplier
+                  Supplier*
                 </label>
                 <select
                   className="w-full p-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  value={receivedInvoice.supplier || suppliers[0]?.name}
+                  value={receivedInvoice.supplier}
                   onChange={(e) => handleSupplierSelection(e.target.value)}
                 >
                   <option value="">Select a supplier</option>
@@ -516,9 +595,7 @@ export default function ReceivedInvoiceEntry(): JSX.Element {
                 </div>
               </div>
 
-              {/* Mobile-responsive received invoice table component */}
               <div className="overflow-x-auto rounded-lg border border-gray-200">
-                {/* Desktop view - regular table */}
                 <div className="hidden md:block">
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
@@ -546,20 +623,16 @@ export default function ReceivedInvoiceEntry(): JSX.Element {
                               className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                               value={item.product}
                               onChange={(e) => {
-                                const selectedProduct = products.find(
-                                  (p) => p._id === e.target.value
-                                );
                                 updateItemField(
                                   item.id,
-                                  selectedProduct ? selectedProduct.name : "",
                                   "product",
                                   e.target.value
                                 );
                               }}
                             >
                               <option value="">Select a product</option>
-                              {products.map((product, index) => (
-                                <option key={index} value={product._id}>
+                              {products.map((product) => (
+                                <option key={product._id} value={product._id}>
                                   {product.name}{" "}
                                   {product.category
                                     ? `(${product.category})`
@@ -577,7 +650,6 @@ export default function ReceivedInvoiceEntry(): JSX.Element {
                               onChange={(e) => {
                                 updateItemField(
                                   item.id,
-                                  "",
                                   "quantity",
                                   parseInt(e.target.value) || 1
                                 );
@@ -594,7 +666,6 @@ export default function ReceivedInvoiceEntry(): JSX.Element {
                               onChange={(e) =>
                                 updateItemField(
                                   item.id,
-                                  "",
                                   "price",
                                   parseFloat(e.target.value) || 0
                                 )
@@ -614,11 +685,7 @@ export default function ReceivedInvoiceEntry(): JSX.Element {
                             <input
                               type="text"
                               className="w-full p-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700 font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                              value={
-                                isNaN(item.total)
-                                  ? formatCurrency(0)
-                                  : formatCurrency(item.total)
-                              }
+                              value={formatCurrency(item.total)}
                               readOnly
                             />
                           </td>
@@ -627,6 +694,7 @@ export default function ReceivedInvoiceEntry(): JSX.Element {
                               onClick={() => removeItem(item.id)}
                               className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition-colors duration-200"
                               aria-label="Remove item"
+                              disabled={receivedInvoice.items.length === 1}
                             >
                               <Trash2 size={18} />
                             </button>
@@ -637,7 +705,6 @@ export default function ReceivedInvoiceEntry(): JSX.Element {
                   </table>
                 </div>
 
-                {/* Mobile view - card-style layout */}
                 <div className="md:hidden">
                   {receivedInvoice.items.map((item) => (
                     <div
@@ -652,6 +719,7 @@ export default function ReceivedInvoiceEntry(): JSX.Element {
                           onClick={() => removeItem(item.id)}
                           className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition-colors duration-200"
                           aria-label="Remove item"
+                          disabled={receivedInvoice.items.length === 1}
                         >
                           <Trash2 size={16} />
                         </button>
@@ -661,20 +729,16 @@ export default function ReceivedInvoiceEntry(): JSX.Element {
                         className="w-full p-2 mb-4 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         value={item.product}
                         onChange={(e) => {
-                          const selectedProduct = products.find(
-                            (p) => p._id === e.target.value
-                          );
                           updateItemField(
                             item.id,
-                            selectedProduct ? selectedProduct.name : "",
                             "product",
                             e.target.value
                           );
                         }}
                       >
                         <option value="">Select a product</option>
-                        {products.map((product, index) => (
-                          <option key={index} value={product._id}>
+                        {products.map((product) => (
+                          <option key={product._id} value={product._id}>
                             {product.name}{" "}
                             {product.category ? `(${product.category})` : ""}
                           </option>
@@ -694,7 +758,6 @@ export default function ReceivedInvoiceEntry(): JSX.Element {
                             onChange={(e) => {
                               updateItemField(
                                 item.id,
-                                "",
                                 "quantity",
                                 parseInt(e.target.value) || 1
                               );
@@ -715,7 +778,6 @@ export default function ReceivedInvoiceEntry(): JSX.Element {
                             onChange={(e) =>
                               updateItemField(
                                 item.id,
-                                "",
                                 "price",
                                 parseFloat(e.target.value) || 0
                               )
@@ -740,11 +802,7 @@ export default function ReceivedInvoiceEntry(): JSX.Element {
                         <input
                           type="text"
                           className="w-full p-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700 font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          value={
-                            isNaN(item.total)
-                              ? formatCurrency(0)
-                              : formatCurrency(item.total)
-                          }
+                          value={formatCurrency(item.total)}
                           readOnly
                         />
                       </div>
@@ -762,8 +820,7 @@ export default function ReceivedInvoiceEntry(): JSX.Element {
                   </label>
                   <textarea
                     rows={4}
-                    className="w-full p-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Any additional notes about this received invoice..."
+                    className="                    w-full p-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     value={receivedInvoice.notes}
                     onChange={(e) =>
                       setReceivedInvoice({
@@ -771,66 +828,58 @@ export default function ReceivedInvoiceEntry(): JSX.Element {
                         notes: e.target.value,
                       })
                     }
-                  ></textarea>
-                </div>
-                <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4">
-                  <h3 className="text-yellow-700 font-medium mb-2">
-                    Important
-                  </h3>
-                  <ul className="text-sm text-gray-700 space-y-1 ml-4 list-disc">
-                    <li>Products will be added to inventory when saved</li>
-                    <li>Check quantities and prices carefully</li>
-                    <li>Make sure to select the correct supplier</li>
-                    <li>{`You can add new products directly using the "New Product" button`}</li>
-                  </ul>
+                    placeholder="Any additional notes..."
+                  />
                 </div>
               </div>
-              <div className="w-full md:w-1/2 lg:w-1/3">
+
+              <div className="w-full md:w-1/3">
                 <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                  <h3 className="text-sm font-medium text-gray-700 mb-2">
-                    Invoice Summary
-                  </h3>
-                  <div className="flex justify-between py-3 border-t border-gray-300 mt-2">
-                    <span className="text-gray-800 font-semibold">
-                      Total Value:
-                    </span>
-                    <span className="text-gray-800 font-bold text-lg">
-                      {formatCurrency(calculateTotal())}
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-gray-600">Subtotal:</span>
+                    <span className="font-medium">
+                      {formatCurrency(receivedInvoice.total)}
                     </span>
                   </div>
-                  <div className="flex justify-between py-2 text-sm">
-                    <span className="text-gray-700">Total Items:</span>
-                    <span className="text-gray-700">
-                      {receivedInvoice.items.length}
-                    </span>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-gray-600">Tax (0%):</span>
+                    <span className="font-medium">{formatCurrency(0)}</span>
                   </div>
-                  <div className="flex justify-between py-2 text-sm">
-                    <span className="text-gray-700">Total Quantity:</span>
-                    <span className="text-gray-700">
-                      {receivedInvoice.items.reduce(
-                        (sum, item) => sum + item.quantity,
-                        0
-                      )}
+                  <div className="border-t border-gray-200 my-3"></div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-800 font-semibold">Total:</span>
+                    <span className="text-xl font-bold text-blue-600">
+                      {formatCurrency(receivedInvoice.total)}
                     </span>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="flex justify-end space-x-4 border-t border-gray-200 pt-6">
+            <div className="flex justify-end space-x-4 pt-4 border-t border-gray-200">
               <button
-                className="px-5 py-2.5 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors duration-200"
-                onClick={() => router.push("/dashboard")}
+                onClick={() => router.push("/products")}
+                className="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors duration-200"
+                disabled={saving}
               >
                 Cancel
               </button>
               <button
-                className="px-5 py-2.5 bg-blue-600 text-white rounded-md flex items-center space-x-2 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-200 shadow-sm"
                 onClick={handleSaveReceivedInvoice}
-                // disabled={!receivedInvoice.supplier || receivedInvoice.items.some(item => !item.product)}
+                className="px-6 py-2.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center transition-colors duration-200"
+                disabled={saving}
               >
-                <Save size={18} />
-                <span>Save Received Invoice</span>
+                {saving ? (
+                  <>
+                    <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></span>
+                    {isEditing ? "Updating..." : "Creating..."}
+                  </>
+                ) : (
+                  <>
+                    <Save size={18} className="mr-2" />
+                    {isEditing ? "Update Invoice" : "Create Invoice"}
+                  </>
+                )}
               </button>
             </div>
           </div>
