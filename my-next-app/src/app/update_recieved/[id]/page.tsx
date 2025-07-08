@@ -318,7 +318,7 @@ export default function ReceivedInvoiceEntry(): JSX.Element {
         throw new Error(`Request failed: ${response.status} - ${errorText}`);
       }
 
-      const data = await response.json();
+      await response.json();
       alert(isEditing ? "Invoice updated successfully!" : "Invoice created successfully!");
       router.push("/products");
     } catch (error) {
