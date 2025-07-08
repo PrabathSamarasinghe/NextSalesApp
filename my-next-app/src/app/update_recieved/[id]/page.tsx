@@ -100,24 +100,34 @@ export default function ReceivedInvoiceEntry(): JSX.Element {
           const invoiceData = await invoiceResponse.json();
           
           // Map the API data to our state structure
-          const mappedData: ReceivedInvoiceData = {
+            interface ApiInvoiceItem {
+            product?: {
+              _id: string;
+              name: string;
+            } | string;
+            name?: string;
+            quantity: number;
+            price: number;
+            }
+
+            const mappedData: ReceivedInvoiceData = {
             _id: invoiceData._id,
             invoiceNumber: invoiceData.invoiceNumber || "",
             date: invoiceData.date ? invoiceData.date.split('T')[0] : new Date().toISOString().split("T")[0],
             supplier: invoiceData.supplier || "",
             items: invoiceData.items && invoiceData.items.length > 0 
-              ? invoiceData.items.map((item: any, index: number) => ({
-                  id: index + 1,
-                  name: item.product?.name || item.name || "",
-                  product: item.product?._id || item.product || "",
-                  quantity: item.quantity || 1,
-                  price: item.price || 0,
-                  total: (item.quantity || 1) * (item.price || 0),
-                }))
+              ? invoiceData.items.map((item: ApiInvoiceItem, index: number) => ({
+                id: index + 1,
+                name: typeof item.product === 'object' ? item.product.name : item.name || "",
+                product: typeof item.product === 'object' ? item.product._id : item.product || "",
+                quantity: item.quantity || 1,
+                price: item.price || 0,
+                total: (item.quantity || 1) * (item.price || 0),
+              }))
               : [{ id: 1, name: "", product: "", quantity: 1, price: 0, total: 0 }],
             total: invoiceData.total || 0,
             notes: invoiceData.notes || "",
-          };
+            };
           
           setReceivedInvoice(mappedData);
         } else {
