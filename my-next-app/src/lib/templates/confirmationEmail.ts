@@ -17,18 +17,37 @@ export function professionalReportEmailTemplate({
 }) {
   const currentDate = new Date();
   const monthNames = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December",
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
   ];
 
   // Calculations
-  const totalSales = productWiseRevenue.reduce((sum, item) => sum + item.revenue, 0);
-  const totalSalesKg = productWiseRevenue.reduce((sum, item) => sum + item.kilos, 0);
-  const totalStockAmount = stockData.reduce((sum, item) => sum + item.price, 0);
+  const totalSales = productWiseRevenue.reduce(
+    (sum, item) => sum + item.revenue,
+    0
+  );
+  const totalSalesKg = productWiseRevenue.reduce(
+    (sum, item) => sum + item.kilos,
+    0
+  );
+  const totalStockAmount = stockData.reduce(
+    (sum, item) => sum + item.price * item.stock,
+    0
+  );
   const netSalesAverage = Number((totalSales / totalSalesKg).toFixed(2));
 
   // Filter stock data to exclude zero stock items
-  const nonZeroStockData = stockData.filter(item => item.stock > 0);
+  const nonZeroStockData = stockData.filter((item) => item.stock > 0);
 
   return `
     <!DOCTYPE html>
@@ -50,12 +69,13 @@ export function professionalReportEmailTemplate({
           background-color: #f8fafc;
         }
         .container {
-          max-width: 800px;
+          max-width: screen;
           margin: 0 auto;
           background-color: white;
-          width: 100%;
         }
         .header {
+          min-width: screen;
+          display: grid;
           background-color: #0f172a;
           color: white;
           padding: 24px 32px;
@@ -63,7 +83,6 @@ export function professionalReportEmailTemplate({
         .header-content {
           display: flex;
           justify-content: space-between;
-          align-items: flex-start;
         }
         .header-left h1 {
           font-size: 24px;
@@ -84,6 +103,7 @@ export function professionalReportEmailTemplate({
         }
         .header-right {
           text-align: right;
+          flex-shrink: 0;
         }
         .header-date {
           font-size: 18px;
@@ -102,11 +122,13 @@ export function professionalReportEmailTemplate({
         }
         .summary-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+          grid-template-columns: repeat(3, 1fr);
           gap: 24px;
           margin-bottom: 32px;
         }
         .summary-card {
+          flex: 1;
+          min-width: 0;
           padding: 24px;
           border-radius: 8px;
           border: 1px solid;
@@ -250,6 +272,8 @@ export function professionalReportEmailTemplate({
           font-size: 12px;
           color: #64748b;
         }
+        
+        /* Mobile Styles */
         @media (max-width: 768px) {
           .header {
             padding: 16px;
@@ -257,6 +281,7 @@ export function professionalReportEmailTemplate({
           .header-content {
             flex-direction: column;
             gap: 16px;
+            align-items: flex-start;
           }
           .header-right {
             text-align: left;
@@ -271,7 +296,7 @@ export function professionalReportEmailTemplate({
             padding: 16px;
           }
           .summary-grid {
-            grid-template-columns: 1fr;
+            display: grid;
             gap: 16px;
           }
           .summary-card {
@@ -286,8 +311,19 @@ export function professionalReportEmailTemplate({
           .section-description {
             font-size: 13px;
           }
+          .table-container {
+            min-width: 100%;
+          }
+          .table-wrapper {
+            margin: 0 -16px;
+            padding: 0 16px;
+          }
           th, td {
-            padding: 12px 16px;
+            padding: 12px 8px;
+            font-size: 12px;
+          }
+          th {
+            font-size: 10px;
           }
           .footer-content {
             flex-direction: column;
@@ -303,6 +339,8 @@ export function professionalReportEmailTemplate({
             align-items: flex-start;
           }
         }
+        
+        /* Small Mobile Styles */
         @media (max-width: 480px) {
           .header-left h1 {
             font-size: 18px;
@@ -319,12 +357,46 @@ export function professionalReportEmailTemplate({
           .summary-value {
             font-size: 18px;
           }
-          th, td {
-            padding: 8px 12px;
-            font-size: 13px;
-          }
           .section-title {
             font-size: 15px;
+          }
+          .table-wrapper {
+            margin: 0 -16px;
+            padding: 0 8px;
+          }
+          th, td {
+            padding: 8px 4px;
+            font-size: 11px;
+          }
+          th {
+            font-size: 9px;
+          }
+        }
+        
+        /* Very Small Mobile (320px and below) */
+        @media (max-width: 320px) {
+          .content {
+            padding: 12px;
+          }
+          .summary-card {
+            padding: 12px;
+          }
+          .summary-value {
+            font-size: 16px;
+          }
+          .summary-label {
+            font-size: 10px;
+          }
+          .table-wrapper {
+            margin: 0 -12px;
+            padding: 0 4px;
+          }
+          th, td {
+            padding: 6px 2px;
+            font-size: 10px;
+          }
+          th {
+            font-size: 8px;
           }
         }
       </style>
@@ -341,7 +413,9 @@ export function professionalReportEmailTemplate({
             </div>
             <div class="header-right">
               <div class="header-date">
-                ${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}
+                ${
+                  monthNames[currentDate.getMonth()]
+                } ${currentDate.getFullYear()}
               </div>
               <div class="header-generated">
                 Report Generated: ${currentDate.toLocaleDateString("en-US", {
@@ -376,7 +450,9 @@ export function professionalReportEmailTemplate({
             <div class="section-header">
               <h2 class="section-title">Sales Performance Analysis</h2>
               <p class="section-description">
-                Product-wise revenue breakdown for ${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}
+                Product-wise revenue breakdown for ${
+                  monthNames[currentDate.getMonth()]
+                } ${currentDate.getFullYear()}
               </p>
             </div>
 
@@ -392,14 +468,20 @@ export function professionalReportEmailTemplate({
                     </tr>
                   </thead>
                   <tbody>
-                    ${productWiseRevenue.map(item => `
+                    ${productWiseRevenue
+                      .map(
+                        (item) => `
                       <tr>
                         <td class="font-medium text-slate-900">${item.name}</td>
                         <td class="text-right font-medium text-slate-600">${item.kilos.toLocaleString()}</td>
                         <td class="text-right font-semibold text-slate-900">Rs. ${item.revenue.toLocaleString()}</td>
-                        <td class="text-right text-slate-600">Rs. ${(item.revenue / item.kilos).toFixed(2)}</td>
+                        <td class="text-right text-slate-600">Rs. ${(
+                          item.revenue / item.kilos
+                        ).toFixed(2)}</td>
                       </tr>
-                    `).join('')}
+                    `
+                      )
+                      .join("")}
                   </tbody>
                   <tfoot>
                     <tr>
@@ -435,14 +517,22 @@ export function professionalReportEmailTemplate({
                     </tr>
                   </thead>
                   <tbody>
-                    ${nonZeroStockData.map(item => `
+                    ${nonZeroStockData
+                      .map(
+                        (item) => `
                       <tr>
                         <td class="font-medium text-slate-900">${item.name}</td>
-                        <td class="text-right text-slate-600">${item.category}</td>
+                        <td class="text-right text-slate-600">${
+                          item.category
+                        }</td>
                         <td class="text-right font-medium text-slate-600">${item.stock.toLocaleString()}</td>
-                        <td class="text-right font-semibold text-slate-900">Rs. ${item.price.toLocaleString()}</td>
+                        <td class="text-right font-semibold text-slate-900">Rs. ${(
+                          item.price * item.stock
+                        ).toLocaleString()}</td>
                       </tr>
-                    `).join('')}
+                    `
+                      )
+                      .join("")}
                   </tbody>
                   <tfoot>
                     <tr>

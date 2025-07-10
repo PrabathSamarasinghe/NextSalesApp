@@ -5,7 +5,6 @@ export async function POST(req) {
   const { stockData, productWiseRevenue } = await req.json();
 
   const recieverEmails = [
-    "prabhaths2001@gmail.com",
     "gm@devagiri-estate.com",
     "mike@devagiri-teas.com",
     "rosh@devagiri-teas.com",

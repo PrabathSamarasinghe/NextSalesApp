@@ -67,7 +67,7 @@ const Email = ({
     (sum, item) => sum + item.kilos,
     0
   );
-  const totalStockAmount = stockData.reduce((sum, item) => sum + item.price, 0);
+  const totalStockAmount = stockData.reduce((sum, item) => sum + (item.price * item.stock), 0);
   const netSalesAverage = Number((totalSales / totalSalesKg).toFixed(2));
 
   return (
@@ -249,7 +249,7 @@ const Email = ({
                           {item?.stock?.toLocaleString()}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 text-right font-semibold">
-                          Rs. {item.price?.toLocaleString()}
+                          Rs. {(item.price * item.stock)?.toLocaleString()}
                         </td>
                       </tr>
                     )
