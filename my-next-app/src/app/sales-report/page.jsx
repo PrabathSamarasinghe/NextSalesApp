@@ -22,6 +22,7 @@ import {
   Package,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import Email from "@/components/Email";
 
 const renderActiveShape = (props) => {
   const RADIAN = Math.PI / 180;
@@ -140,10 +141,8 @@ export default function ProductSalesReport() {
       console.error("Error fetching role:", error);
     }
   };
-  
 
   const fetchActiveMonths = async () => {
-    
     try {
       await new Promise((resolve) => setTimeout(resolve, 800));
 
@@ -162,14 +161,13 @@ export default function ProductSalesReport() {
       if (!response.ok) {
         throw new Error("Network response was not ok");
       }
-      const data = await response.json();      
+      const data = await response.json();
       setActiveMonths(data.activeMonths);
       setError("");
-
     } catch (error) {
       console.error("Error fetching active months:", error);
     }
-  }
+  };
   const fetchSalesData = async () => {
     setError("");
 
@@ -300,28 +298,57 @@ export default function ProductSalesReport() {
   const commissionCalculator = (productWiseRevenue) => {
     return productWiseRevenue.reduce((total, product) => {
       if (product.name.toLowerCase() === "dust 2") {
-        const baseCommission = 50000; 
+        const baseCommission = 50000;
         return total + baseCommission * activeMonths;
-        }
-        return total + (product.revenue * 0.07);
-      }, 0
-    );
+      }
+      return total + product.revenue * 0.07;
+    }, 0);
   };
   const { totalRevenue, totalQuantity, totalInvoices } = getTotalStats();
   const totalCommission = commissionCalculator(productWiseRevenue);
   const dust2Commission = commissionDust2(productWiseRevenue);
+  const [emailOpen, setEmailOpen] = useState(false);
+  if (emailOpen) {
+    return (
+      <Email setEmailOpen={setEmailOpen} productWiseRevenue={productWiseRevenue} />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-screen mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex items-center mb-6">
-          <button
-            className="flex items-center text-gray-600 hover:text-blue-600 transition-colors duration-200"
-            onClick={() => router.push("/dashboard")}
-          >
-            <ArrowLeft size={20} className="mr-2" />
-            <span className="font-medium">Back to Dashboard</span>
-          </button>
+        <div className="grid sm:flex justify-between items-center mb-6">
+          <div className="flex items-center mb-6">
+            <button
+              className="flex items-center text-gray-600 hover:text-blue-600 transition-colors duration-200"
+              onClick={() => router.push("/dashboard")}
+            >
+              <ArrowLeft size={20} className="mr-2" />
+              <span className="font-medium">Back to Dashboard</span>
+            </button>
+          </div>
+          <div className="mb-6 bg-white p-4 rounded-lg shadow-sm border border-gray-200 flex items-center justify-between gap-4">
+            <span className="text-gray-700 font-medium">
+              Notify Authorities:
+            </span>
+            <button
+              className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md transition-colors duration-300 flex items-center"
+              onClick={() => {
+                setEmailOpen(true);
+              }}
+              disabled={emailOpen}
+            >
+              <span className="mr-2">Send</span>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
+              </svg>
+            </button>
+          </div>
         </div>
 
         <div className="bg-white rounded-lg shadow-lg border border-gray-100">
