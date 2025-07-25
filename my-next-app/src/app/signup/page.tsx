@@ -44,10 +44,10 @@ const SignupPage = () => {
     const getStrengthColor = () => {
         const strength = getPasswordStrength();
         if (strength === 0) return 'bg-gray-200';
-        if (strength === 1) return 'bg-blue-300';
-        if (strength === 2) return 'bg-blue-400';
-        if (strength === 3) return 'bg-blue-500';
-        return 'bg-blue-600';
+        if (strength === 1) return 'bg-green-300';
+        if (strength === 2) return 'bg-green-400';
+        if (strength === 3) return 'bg-green-500';
+        return 'bg-green-600';
     };
 
     const handleSubmit = async (e: { preventDefault: () => void; }) => {
@@ -85,11 +85,11 @@ const SignupPage = () => {
 
     return (
         <div className="flex min-h-screen items-center justify-center py-12 px-4">
-            <div className="w-full max-w-md space-y-6 bg-white p-8 rounded-lg shadow-xl border border-blue-100">
-                <h2 className="mt-2 text-center text-3xl font-bold text-blue-900">
+            <div className="w-full max-w-md space-y-6 bg-white p-8 rounded-lg shadow-xl border border-green-100">
+                <h2 className="mt-2 text-center text-3xl font-bold text-green-900">
                     Create your account
                 </h2>
-                <div className="w-16 h-1 mx-auto bg-blue-500 rounded-full"></div>
+                <div className="w-16 h-1 mx-auto bg-green-500 rounded-full"></div>
                 
                 <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
                     <div className="space-y-4 rounded-md">
@@ -104,7 +104,7 @@ const SignupPage = () => {
                                     placeholder="First Name" 
                                     value={formData.firstName} 
                                     onChange={handleChange} 
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" 
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all" 
                                     required 
                                 />
                             </div>
@@ -118,7 +118,7 @@ const SignupPage = () => {
                                     placeholder="Last Name" 
                                     value={formData.lastName} 
                                     onChange={handleChange} 
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" 
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all" 
                                     required 
                                 />
                             </div>
@@ -134,11 +134,11 @@ const SignupPage = () => {
                                 placeholder="Email" 
                                 value={formData.email} 
                                 onChange={handleChange} 
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" 
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all" 
                                 required 
                             />
                             {!validEmail && formData.email && 
-                                <p className="text-xs text-blue-600 mt-1 ml-1">Invalid email format</p>
+                                <p className="text-xs text-green-600 mt-1 ml-1">Invalid email format</p>
                             }
                         </div>
                         
@@ -152,11 +152,11 @@ const SignupPage = () => {
                                 placeholder="Username" 
                                 value={formData.username} 
                                 onChange={handleChange} 
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" 
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all" 
                                 required 
                             />
                             {!has8Chars && formData.username && 
-                                <p className="text-xs text-blue-600 mt-1 ml-1">Username must be at least 8 characters</p>
+                                <p className="text-xs text-green-600 mt-1 ml-1">Username must be at least 8 characters</p>
                             }
                         </div>
                         
@@ -170,18 +170,18 @@ const SignupPage = () => {
                                 placeholder="Password" 
                                 value={formData.password} 
                                 onChange={handleChange} 
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" 
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all" 
                                 required 
                             />
                             <div className="mt-2">
                                 {formData.password && !hasLowercase && 
-                                    <p className="text-xs text-blue-600 mb-1">• Password must contain a lowercase letter</p>
+                                    <p className="text-xs text-green-600 mb-1">• Password must contain a lowercase letter</p>
                                 }
                                 {formData.password && !hasUppercase && 
-                                    <p className="text-xs text-blue-600 mb-1">• Password must contain an uppercase letter</p>
+                                    <p className="text-xs text-green-600 mb-1">• Password must contain an uppercase letter</p>
                                 }
                                 {formData.password && !hasSpecialChar && 
-                                    <p className="text-xs text-blue-600 mb-1">• Password must contain a special character</p>
+                                    <p className="text-xs text-green-600 mb-1">• Password must contain a special character</p>
                                 }
                             </div>
                         </div>
@@ -214,11 +214,11 @@ const SignupPage = () => {
                                 placeholder="Confirm Password" 
                                 value={formData.confirmPassword} 
                                 onChange={handleChange} 
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" 
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all" 
                                 required 
                             />
                             {!passwordMatch && formData.confirmPassword && 
-                                <p className="text-xs text-blue-600 mt-1 ml-1">Passwords do not match</p>
+                                <p className="text-xs text-green-600 mt-1 ml-1">Passwords do not match</p>
                             }
                         </div>
                     </div>
@@ -255,7 +255,7 @@ const SignupPage = () => {
 
                     <button 
                         type="submit" 
-                        className="w-full bg-blue-600 text-white py-2.5 px-4 rounded-md font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm" 
+                        className="w-full bg-green-600 text-white py-2.5 px-4 rounded-md font-medium hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm" 
                         disabled={!has8Chars || !hasLowercase || !hasUppercase || !hasSpecialChar || !passwordMatch || !validEmail }
                     >
                         Create Account
@@ -272,7 +272,7 @@ const SignupPage = () => {
                 </div>
                 
                 <p className="text-center text-sm text-gray-600">
-                    Already have an account? <Link href="/" className="font-medium text-blue-600 hover:text-blue-800 transition-colors">Login here</Link>
+                    Already have an account? <Link href="/" className="font-medium text-green-600 hover:text-green-800 transition-colors">Login here</Link>
                 </p>
             </div>
         </div>

@@ -51,11 +51,11 @@ const LoginPage = () => {
 
     return (
         <div className="flex min-h-screen items-center justify-center py-12 px-4">
-            <div className="w-full max-w-md space-y-6 bg-white p-8 rounded-lg shadow-xl border border-blue-100">
-                <h2 className="mt-2 text-center text-3xl font-bold text-blue-900">
+            <div className="w-full max-w-md space-y-6 bg-white p-8 rounded-lg shadow-xl border border-green-100">
+                <h2 className="mt-2 text-center text-3xl font-bold text-green-900">
                     Login to your account
                 </h2>
-                <div className="w-16 h-1 mx-auto bg-blue-500 rounded-full"></div>
+                <div className="w-16 h-1 mx-auto bg-green-500 rounded-full"></div>
 
                 <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
                     <div className="space-y-4 rounded-md">
@@ -71,7 +71,7 @@ const LoginPage = () => {
                                 value={formData.username}
                                 onChange={handleChange}
                                 placeholder="Enter your username"
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
                                 required
                             />
                             
@@ -89,7 +89,7 @@ const LoginPage = () => {
                                 value={formData.password}
                                 onChange={handleChange}
                                 placeholder="Enter your password"
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
                                 required
                             />
                         </div>
@@ -101,7 +101,7 @@ const LoginPage = () => {
                                     name="remember-me"
                                     type="checkbox"
                                     checked={rememberMe}
-                                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                    className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
                                     onChange={(e) => setRememberMe(e.target.checked)}
                                 />
                                 <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-600">
@@ -109,9 +109,9 @@ const LoginPage = () => {
                                 </label>
                             </div>
                             <div className="text-sm">
-                                <a href="#" className="font-medium text-blue-600 hover:text-blue-800 transition-colors">
+                                {/* <a href="#" className="font-medium text-green-600 hover:text-green-800 transition-colors">
                                     Forgot password?
-                                </a>
+                                </a> */}
                             </div>
                         </div>
                     </div>
@@ -148,7 +148,7 @@ const LoginPage = () => {
 
                     <button
                         type="submit"
-                        className="w-full bg-blue-600 text-white py-2.5 px-4 rounded-md font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                        className="w-full bg-green-600 text-white py-2.5 px-4 rounded-md font-medium hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
                         disabled={!formData.username || !formData.password}
                     >
                         Sign In
@@ -166,7 +166,7 @@ const LoginPage = () => {
                 
                 <p className="text-center text-sm text-gray-600">
                     Dont have an account?{" "}
-                    <a href="/signup" className="font-medium text-blue-600 hover:text-blue-800 transition-colors">
+                    <a href="/signup" className="font-medium text-green-600 hover:text-green-800 transition-colors">
                         Register Now
                     </a>
                 </p>
