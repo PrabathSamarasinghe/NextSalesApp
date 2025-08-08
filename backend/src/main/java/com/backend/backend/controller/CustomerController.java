@@ -58,14 +58,9 @@ public class CustomerController {
         }
     }
 
-    @GetMapping("/all")
-    public ResponseEntity<Customers[]> getAllCustomers() {
-        Customers[] customers = customerService.getAllCustomers();
-        if (customers.length > 0) {
-            return ResponseEntity.ok(customers);
-        } else {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-        }
+    @GetMapping("/all/{page_number}")
+    public ResponseEntity<CustomerService.CustomersResponse> getAllCustomers(@PathVariable int page_number) {
+        return customerService.getAllCustomers(page_number);
     }
 
 }

@@ -23,12 +23,29 @@ public class CustomerService {
         }
     }
 
-    public Customers[] getAllCustomers() {
+    public static class CustomersResponse {
+        public Customers[] customers;
+        public int totalCount;
+        
+        public CustomersResponse(Customers[] customers, int totalCount) {
+            this.customers = customers;
+            this.totalCount = totalCount;
+        }
+    }
+
+    public ResponseEntity<CustomersResponse> getAllCustomers(int page_number) {
         try {
-            return customerRepository.findAll().toArray(new Customers[0]);
+            Customers[] customers = customerRepository.findAll().toArray(new Customers[0]);
+            int length = customers.length;
+            int customers_per_page = 7;
+            int start = (page_number - 1) * customers_per_page;
+            int end = Math.min(start + customers_per_page, length);
+            Customers[] paginatedCustomers = new Customers[end - start];
+            System.arraycopy(customers, start, paginatedCustomers, 0, end - start);
+            return ResponseEntity.ok(new CustomersResponse(paginatedCustomers, length));
         } catch (Exception e) {
             e.printStackTrace();
-            return new Customers[0];
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new CustomersResponse(new Customers[0], 0));
         }
     }
 
