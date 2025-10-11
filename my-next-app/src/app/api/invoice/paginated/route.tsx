@@ -13,7 +13,9 @@ export async function GET(request: NextRequest) {
     const sortField = searchParams.get('sortField') || 'date';
     const sortDirection = (searchParams.get('sortDirection') || 'desc') as 'asc' | 'desc';
 
-    const params: any = {
+    // Build params object with proper types
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const params: Record<string, any> = {
       page,
       limit,
       search,

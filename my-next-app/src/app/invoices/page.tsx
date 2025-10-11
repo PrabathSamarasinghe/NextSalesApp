@@ -65,7 +65,7 @@ export default function InvoicesList() {
     field: "date",
     direction: "desc" as "asc" | "desc",
   });
-  const [dateRange, setDateRange] = useState({ start: "", end: "" });
+  const [dateRange] = useState({ start: "", end: "" });
   const [statusFilter, setStatusFilter] = useState("all");
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);

@@ -36,7 +36,8 @@ export async function getProductsPaginated({
     const sortOrder = sortDirection === 'asc' ? 1 : -1;
     
     // Build search and filter query
-    const query: any = {};
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const query: Record<string, any> = {};
     
     if (search) {
       query.$or = [

@@ -191,7 +191,7 @@ export default function ReceivedInvoiceEntry(): JSX.Element {
       ...prev,
       total: total,
     }));
-  }, [receivedInvoice.items]);
+  }, [receivedInvoice.items, calculateTotal]);
 
   const [loading, setLoading] = useState<boolean>(false);
   // Function to handle saving the received invoice
