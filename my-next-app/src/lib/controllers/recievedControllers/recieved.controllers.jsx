@@ -13,6 +13,58 @@ export const getRecievedInvoices = async () => {
   }
 };
 
+export const getRecievedInvoicesPaginated = async ({
+  page = 1,
+  limit = 10,
+  search = '',
+  sortField = 'date',
+  sortDirection = 'desc'
+}) => {
+  try {
+    await connectDB();
+    
+    const skip = (page - 1) * limit;
+    const sortOrder = sortDirection === 'asc' ? 1 : -1;
+    
+    // Build search query
+    const searchQuery = search 
+      ? {
+          $or: [
+            { invoiceNumber: { $regex: search, $options: 'i' } },
+            { supplier: { $regex: search, $options: 'i' } }
+          ]
+        }
+      : {};
+    
+    // Get total count for pagination
+    const total = await RecievedInvoice.countDocuments(searchQuery);
+    
+    // Get paginated invoices
+    const invoices = await RecievedInvoice.find(searchQuery)
+      .sort({ [sortField]: sortOrder })
+      .skip(skip)
+      .limit(limit)
+      .lean();
+    
+    return {
+      invoices,
+      pagination: {
+        currentPage: page,
+        totalPages: Math.ceil(total / limit),
+        totalItems: total,
+        itemsPerPage: limit,
+        hasNextPage: page < Math.ceil(total / limit),
+        hasPrevPage: page > 1
+      }
+    };
+  } catch (error) {
+    return { 
+      status: 500, 
+      message: error.message
+    };
+  }
+};
+
 export const getRecievedInvoiceById = async (id) => {
   try {
     await connectDB();

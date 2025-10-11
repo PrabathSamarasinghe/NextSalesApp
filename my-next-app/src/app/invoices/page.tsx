@@ -583,7 +583,7 @@ export default function InvoicesList() {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-right">
                             <div className="text-sm font-bold text-gray-900">
-                              Rs. {invoice.total.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
+                              Rs. {(invoice.total - (invoice.advance ? invoice.advance : 0)).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-center">
@@ -781,8 +781,8 @@ export default function InvoicesList() {
                         </tr>
                       ))}
                     </tbody>
-                    <tfoot className="bg-gray-50">
-                      <tr>
+                    <tfoot>
+                      <tr className="bg-gray-50">
                         <td colSpan={4} className="px-6 py-4 text-right text-sm font-medium text-gray-500">
                           Total Amount
                         </td>
@@ -791,7 +791,7 @@ export default function InvoicesList() {
                         </td>
                       </tr>
                       {selectedInvoice.advance && (
-                        <tr>
+                        <tr className="bg-gray-50">
                           <td colSpan={4} className="px-6 py-4 text-right text-sm font-medium text-gray-500">
                             Advance Paid
                           </td>
@@ -800,7 +800,7 @@ export default function InvoicesList() {
                           </td>
                         </tr>
                       )}
-                      <tr>
+                      <tr className="bg-gray-50">
                         <td colSpan={4} className="px-6 py-4 text-right text-sm font-medium text-gray-500">
                           Balance Due
                         </td>

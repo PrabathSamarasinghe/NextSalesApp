@@ -176,22 +176,17 @@ export default function ReceivedInvoiceEntry(): JSX.Element {
     });
   };
 
-  const calculateTotal = (): number => {
+  // Update total whenever items change
+  useLayoutEffect(() => {
     const total = receivedInvoice.items.reduce(
       (sum, item) => sum + item.total,
       0
     );
-    return total;
-  };
-
-  // Update total whenever items change
-  useLayoutEffect(() => {
-    const total = calculateTotal();
     setReceivedInvoice((prev) => ({
       ...prev,
       total: total,
     }));
-  }, [receivedInvoice.items, calculateTotal]);
+  }, [receivedInvoice.items]);
 
   const [loading, setLoading] = useState<boolean>(false);
   // Function to handle saving the received invoice
@@ -795,7 +790,7 @@ export default function ReceivedInvoiceEntry(): JSX.Element {
                       Total Value:
                     </span>
                     <span className="text-gray-800 font-bold text-lg">
-                      {formatCurrency(calculateTotal())}
+                      {formatCurrency(receivedInvoice.total)}
                     </span>
                   </div>
                   <div className="flex justify-between py-2 text-sm">

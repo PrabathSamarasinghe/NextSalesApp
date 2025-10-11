@@ -43,9 +43,10 @@ export default function ReceivedInvoicesList() {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentSort, setCurrentSort] = useState({
     field: "date",
-    direction: "desc",
+    direction: "desc" as "asc" | "desc",
   });
-  const [dateRange] = useState({ start: "", end: "" });
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
   const [selectedInvoice, setSelectedInvoice] = useState<ReceivedInvoiceStructure | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const navigate = useRouter();
@@ -60,17 +61,36 @@ export default function ReceivedInvoicesList() {
         console.error("Error fetching role:", error);
       }
     };
+    fetchRole();
+  }, []);
     
+  useLayoutEffect(() => {
     const fetchInvoices = async () => {
+      setIsLoading(true);
+      setLoading(true);
       try {
-        const response = await fetch("/api/recievedInv/all", {
+        // Build query parameters for backend pagination
+        const params = new URLSearchParams({
+          page: currentPage.toString(),
+          limit: itemsPerPage.toString(),
+          search: searchTerm,
+          sortField: currentSort.field,
+          sortDirection: currentSort.direction,
+        });
+
+        const response = await fetch(`/api/recievedInv/paginated?${params}`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
           },
         });
         const data = await response.json();
-        setInvoicesStructure(data || []);
+        
+        if (data.invoices) {
+          setInvoicesStructure(data.invoices);
+          setTotalPages(data.pagination.totalPages);
+          setTotalItems(data.pagination.totalItems);
+        }
       } catch (error) {
         console.error("Error fetching invoices:", error);
         setInvoicesStructure([]);
@@ -80,48 +100,8 @@ export default function ReceivedInvoicesList() {
       }
     };
     
-    fetchRole();
     fetchInvoices();
-  }, []);
-
-  const filteredInvoices = Array.isArray(invoicesStructure) 
-    ? invoicesStructure
-        .filter((invoice) => {
-          const matchesSearch =
-            invoice.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            invoice.supplier.toLowerCase().includes(searchTerm.toLowerCase());
-
-          let matchesDate = true;
-          if (dateRange.start) {
-            matchesDate = matchesDate && invoice.date >= dateRange.start;
-          }
-          if (dateRange.end) {
-            matchesDate = matchesDate && invoice.date <= dateRange.end;
-          }
-
-          return matchesSearch && matchesDate;
-        })
-        .sort((a, b) => {
-          if (currentSort.field === "date") {
-            return currentSort.direction === "asc"
-              ? new Date(a.date).getTime() - new Date(b.date).getTime()
-              : new Date(b.date).getTime() - new Date(a.date).getTime();
-          } else if (currentSort.field === "total") {
-            return currentSort.direction === "asc"
-              ? a.total - b.total
-              : b.total - a.total;
-          } else if (currentSort.field === "supplier") {
-            return currentSort.direction === "asc"
-              ? a.supplier.localeCompare(b.supplier)
-              : b.supplier.localeCompare(a.supplier);
-          }
-          return 0;
-        }) 
-    : [];
-
-  const lastPostIndex = currentPage * itemsPerPage;
-  const firstPostIndex = lastPostIndex - itemsPerPage;
-  const currentPosts = filteredInvoices.slice(firstPostIndex, lastPostIndex);
+  }, [currentPage, searchTerm, currentSort.field, currentSort.direction, itemsPerPage]);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
@@ -133,6 +113,7 @@ export default function ReceivedInvoicesList() {
       field,
       direction: prev.field === field && prev.direction === "asc" ? "desc" : "asc",
     }));
+    setCurrentPage(1); // Reset to first page when sorting changes
   };
 
   const getSortIcon = (field: string) => {
@@ -282,8 +263,8 @@ export default function ReceivedInvoicesList() {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {currentPosts.length > 0 ? (
-                      currentPosts.map((invoice) => (
+                    {invoicesStructure.length > 0 ? (
+                      invoicesStructure.map((invoice) => (
                         <tr key={invoice._id} className="hover:bg-gray-50 transition-colors duration-150">
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors duration-200">
@@ -345,13 +326,13 @@ export default function ReceivedInvoicesList() {
               {/* Pagination */}
               <div className="px-5 py-4 bg-gray-50 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between">
                 <div className="text-sm text-gray-600 mb-4 sm:mb-0">
-                  Showing <span className="font-medium">{filteredInvoices.length > 0 ? firstPostIndex + 1 : 0}</span> to{" "}
-                  <span className="font-medium">{Math.min(lastPostIndex, filteredInvoices.length)}</span> of{" "}
-                  <span className="font-medium">{filteredInvoices.length}</span> results
+                  Showing <span className="font-medium">{totalItems > 0 ? ((currentPage - 1) * itemsPerPage) + 1 : 0}</span> to{" "}
+                  <span className="font-medium">{Math.min(currentPage * itemsPerPage, totalItems)}</span> of{" "}
+                  <span className="font-medium">{totalItems}</span> results
                 </div>
                 <Pagination
                   currentPage={currentPage}
-                  totalPages={Math.ceil(filteredInvoices.length / itemsPerPage)}
+                  totalPages={totalPages}
                   onPageChange={(page) => setCurrentPage(page)}
                 />
               </div>
