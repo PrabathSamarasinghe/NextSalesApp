@@ -1,33 +1,66 @@
 import Invoice from "@/lib/models/Invoice.model";
 import connectDB from "@/lib/db";
 import Product from "@/lib/models/Product.model";
+import mongoose from "mongoose";
 
 export const createInvoice = async (invoiceData) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+  
   try {
     await connectDB();
+    
+    // Update product stocks within transaction
     await Promise.all(
       invoiceData.items.map(async (item) => {
-        await Product.findByIdAndUpdate(item.product, {
-          $inc: { stock: -item.quantity },
-        });
+        const product = await Product.findById(item.product).session(session);
+        
+        if (!product) {
+          throw new Error(`Product not found: ${item.product}`);
+        }
+        
+        if (product.stock < item.quantity) {
+          throw new Error(`Insufficient stock for product: ${product.name}. Available: ${product.stock}, Required: ${item.quantity}`);
+        }
+        
+        await Product.findByIdAndUpdate(
+          item.product,
+          { $inc: { stock: -item.quantity } },
+          { session }
+        );
       })
     );
+    
+    // Create invoice within transaction
     const invoice = new Invoice(invoiceData);
-    await invoice.save();
-    return { status: 201, message: "Invoice created successfully" };
+    await invoice.save({ session });
+    
+    // Commit transaction
+    await session.commitTransaction();
+    
+    return { status: 201, message: "Invoice created successfully", invoiceId: invoice._id };
   } catch (error) {
+    // Rollback transaction on error
+    await session.abortTransaction();
+    
     return {
       status: 500,
       message: error.message,
     };
+  } finally {
+    session.endSession();
   }
 };
 export const updateInvoice = async (invoiceId, invoiceData) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+  
   try {
     await connectDB();
 
-    const invoice = await Invoice.findById(invoiceId);
+    const invoice = await Invoice.findById(invoiceId).session(session);
     if (!invoice) {
+      await session.abortTransaction();
       return { status: 404, message: "Invoice not found" };
     }
 
@@ -39,29 +72,50 @@ export const updateInvoice = async (invoiceId, invoiceData) => {
       existingMap.set(item.product.toString(), item.quantity);
     }
 
-    // Update stock based on new items
+    // Update stock based on new items within transaction
     for (const newItem of invoiceData.items) {
       const productId = newItem.product.toString();
       const oldQty = existingMap.get(productId) || 0;
       const newQty = newItem.quantity;
 
       const stockChange = oldQty - newQty; // If positive, restock; if negative, deduct more
-      await Product.findByIdAndUpdate(productId, {
-        $inc: { stock: stockChange },
-      });
+      
+      // Check stock availability if we need to deduct more
+      if (stockChange < 0) {
+        const product = await Product.findById(productId).session(session);
+        if (!product) {
+          throw new Error(`Product not found: ${productId}`);
+        }
+        if (product.stock < Math.abs(stockChange)) {
+          throw new Error(`Insufficient stock for product: ${product.name}. Available: ${product.stock}, Required: ${Math.abs(stockChange)}`);
+        }
+      }
+      
+      await Product.findByIdAndUpdate(
+        productId,
+        { $inc: { stock: stockChange } },
+        { session }
+      );
     }
 
     // Update the invoice object
     Object.assign(invoice, invoiceData);
-    await invoice.save();
+    await invoice.save({ session });
+
+    // Commit transaction
+    await session.commitTransaction();
 
     return { status: 200, message: "Invoice updated successfully" };
   } catch (error) {
     console.error("Invoice update failed:", error);
+    await session.abortTransaction();
+    
     return {
       status: 500,
       message: error.message,
     };
+  } finally {
+    session.endSession();
   }
 };
 
@@ -79,23 +133,69 @@ export const getAllInvoices = async () => {
   }
 };
 
-export const deleteInvoice = async (invoiceId) => {
+export const getInvoicesPaginated = async ({
+  page = 1,
+  limit = 10,
+  search = '',
+  statusFilter = 'all',
+  startDate = null,
+  endDate = null,
+  sortField = 'date',
+  sortDirection = 'desc'
+}) => {
   try {
     await connectDB();
-    const invoice = await Invoice.findById(invoiceId);
-
-    await Promise.all(
-      invoice.items.map(async (item) => {
-        await Product.findByIdAndUpdate(item.product, {
-          $inc: { stock: item.quantity },
-        });
-        const result = await Invoice.findByIdAndDelete(invoiceId);
-        if (!result) {
-          return { status: 404, message: "Invoice not found" };
-        }
-        return { status: 200, message: "Invoice deleted successfully" };
-      })
-    );
+    
+    const skip = (page - 1) * limit;
+    const sortOrder = sortDirection === 'asc' ? 1 : -1;
+    
+    // Build search and filter query
+    const query = {};
+    
+    // Search filter
+    if (search) {
+      query.$or = [
+        { invoiceNumber: { $regex: search, $options: 'i' } },
+        { 'customerDetails.name': { $regex: search, $options: 'i' } }
+      ];
+    }
+    
+    // Status filter
+    if (statusFilter === 'paid') {
+      query.isPaid = true;
+    } else if (statusFilter === 'pending') {
+      query.isPaid = false;
+    }
+    
+    // Date range filter
+    if (startDate && endDate) {
+      query.date = {
+        $gte: startDate,
+        $lte: endDate
+      };
+    }
+    
+    // Get total count for pagination
+    const total = await Invoice.countDocuments(query);
+    
+    // Get paginated invoices
+    const invoices = await Invoice.find(query)
+      .sort({ [sortField]: sortOrder })
+      .skip(skip)
+      .limit(limit)
+      .lean();
+    
+    return {
+      invoices,
+      pagination: {
+        currentPage: page,
+        totalPages: Math.ceil(total / limit),
+        totalItems: total,
+        itemsPerPage: limit,
+        hasNextPage: page < Math.ceil(total / limit),
+        hasPrevPage: page > 1
+      }
+    };
   } catch (error) {
     return {
       status: 500,
@@ -104,32 +204,98 @@ export const deleteInvoice = async (invoiceId) => {
   }
 };
 
-export const cancelInvoice = async (invoiceId) => {
+export const deleteInvoice = async (invoiceId) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+  
   try {
     await connectDB();
-    const invoice = await Invoice.findById(invoiceId);
+    
+    const invoice = await Invoice.findById(invoiceId).session(session);
+    if (!invoice) {
+      await session.abortTransaction();
+      return { status: 404, message: "Invoice not found" };
+    }
 
+    // Restore stock for all items within transaction
     await Promise.all(
       invoice.items.map(async (item) => {
-        await Product.findByIdAndUpdate(item.product, {
-          $inc: { stock: item.quantity },
-        });
-        const result = await Invoice.updateOne(
-          { _id: invoiceId },
-          { isCancelled: true }
+        await Product.findByIdAndUpdate(
+          item.product,
+          { $inc: { stock: item.quantity } },
+          { session }
         );
-        if (result.modifiedCount === 0) {
-          return { status: 404, message: "Invoice not found" };
-        }
       })
     );
-
-    return { status: 200, message: "Invoice cancelled successfully" };
+    
+    // Delete the invoice
+    await Invoice.findByIdAndDelete(invoiceId, { session });
+    
+    // Commit transaction
+    await session.commitTransaction();
+    
+    return { status: 200, message: "Invoice deleted successfully" };
   } catch (error) {
+    await session.abortTransaction();
+    
     return {
       status: 500,
       message: error.message,
     };
+  } finally {
+    session.endSession();
+  }
+};
+
+export const cancelInvoice = async (invoiceId) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+  
+  try {
+    await connectDB();
+    
+    const invoice = await Invoice.findById(invoiceId).session(session);
+    if (!invoice) {
+      await session.abortTransaction();
+      return { status: 404, message: "Invoice not found" };
+    }
+
+    // Restore stock for all items within transaction
+    await Promise.all(
+      invoice.items.map(async (item) => {
+        await Product.findByIdAndUpdate(
+          item.product,
+          { $inc: { stock: item.quantity } },
+          { session }
+        );
+      })
+    );
+    
+    // Mark invoice as cancelled
+    const result = await Invoice.updateOne(
+      { _id: invoiceId },
+      { isCancelled: true },
+      { session }
+    );
+    
+    if (result.modifiedCount === 0) {
+      await session.abortTransaction();
+      return { status: 404, message: "Invoice not found or already cancelled" };
+    }
+    
+    // Commit transaction
+    await session.commitTransaction();
+
+    return { status: 200, message: "Invoice cancelled successfully" };
+  } catch (error) {
+    await session.abortTransaction();
+    
+    return {
+      status: 500,
+      message: error.message,
+    };
+  } finally {
+    session.endSession();
   }
 };
 

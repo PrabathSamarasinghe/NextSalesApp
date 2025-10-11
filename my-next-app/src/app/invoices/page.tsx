@@ -63,10 +63,12 @@ export default function InvoicesList() {
   const [filterOpen, setFilterOpen] = useState(false);
   const [currentSort, setCurrentSort] = useState({
     field: "date",
-    direction: "desc",
+    direction: "desc" as "asc" | "desc",
   });
-  const [dateRange] = useState({ start: "", end: "" });
+  const [dateRange, setDateRange] = useState({ start: "", end: "" });
   const [statusFilter, setStatusFilter] = useState("all");
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
   const [selectedInvoice, setSelectedInvoice] = useState<InvoiceStructure | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const navigate = useRouter();
@@ -85,10 +87,68 @@ export default function InvoicesList() {
         console.error("Error fetching role:", error);
       }
     };
+    fetchRole();
+  }, []);
 
-    const fetchInvoices = async () => {
+  useLayoutEffect(() => {
+    const fetchPendingAmount = async () => {
       try {
         const response = await fetch("/api/invoice/getall", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+        const data = await response.json();
+
+        if (!data.error) {
+          const totalPending = data.invoices.reduce(
+            (sum: number, invoice: InvoiceStructure) => {
+              return invoice.isPaid ? sum : sum + invoice.total;
+            },
+            0
+          );
+
+          const totalAdvance = data.invoices.reduce(
+            (sum: number, invoice: InvoiceStructure) => {
+              return invoice.advance ? sum + invoice.advance : sum;
+            },
+            0
+          );
+
+          setPendingAmount(totalPending - totalAdvance);
+        }
+      } catch (error) {
+        console.error("Error fetching pending amount:", error);
+      }
+    };
+    fetchPendingAmount();
+  }, []);
+
+  useLayoutEffect(() => {
+    const fetchInvoices = async () => {
+      setIsLoading(true);
+      setLoading(true);
+      try {
+        // Build query parameters for backend pagination
+        const params = new URLSearchParams({
+          page: currentPage.toString(),
+          limit: itemsPerPage.toString(),
+          search: searchTerm,
+          sortField: currentSort.field,
+          sortDirection: currentSort.direction,
+          statusFilter: statusFilter,
+        });
+
+        // Add date range if set
+        if (dateRange.start) {
+          params.append("startDate", dateRange.start);
+        }
+        if (dateRange.end) {
+          params.append("endDate", dateRange.end);
+        }
+
+        const response = await fetch(`/api/invoice/paginated?${params}`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
@@ -101,76 +161,19 @@ export default function InvoicesList() {
           return;
         }
 
-        const totalPending = data.invoices.reduce(
-          (sum: number, invoice: InvoiceStructure) => {
-            return invoice.isPaid ? sum : sum + invoice.total;
-          },
-          0
-        );
-
-        const totalAdvance = data.invoices.reduce(
-          (sum: number, invoice: InvoiceStructure) => {
-            return invoice.advance ? sum + invoice.advance : sum;
-          },
-          0
-        );
-
-        setPendingAmount(totalPending - totalAdvance);
         setInvoicesStructure(data.invoices);
-        setIsLoading(false);
-        setLoading(false);
+        setTotalPages(data.pagination.totalPages);
+        setTotalItems(data.pagination.totalItems);
       } catch (error) {
         console.error("Error in fetchInvoices:", error);
+      } finally {
         setIsLoading(false);
         setLoading(false);
       }
     };
 
-    fetchRole();
     fetchInvoices();
-  }, []);
-
-  const filteredInvoices = invoicesStructure
-    .filter((invoice) => {
-      const matchesSearch =
-        invoice.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        invoice.customerDetails.name.toLowerCase().includes(searchTerm.toLowerCase());
-
-      const matchesStatus =
-        statusFilter === "all" ||
-        (statusFilter === "paid" && invoice.isPaid) ||
-        (statusFilter === "pending" && !invoice.isPaid);
-
-      let matchesDate = true;
-      if (dateRange.start) {
-        matchesDate = matchesDate && invoice.date >= dateRange.start;
-      }
-      if (dateRange.end) {
-        matchesDate = matchesDate && invoice.date <= dateRange.end;
-      }
-
-      return matchesSearch && matchesStatus && matchesDate;
-    })
-    .sort((a, b) => {
-      if (currentSort.field === "date") {
-        return currentSort.direction === "asc"
-          ? new Date(a.date).getTime() - new Date(b.date).getTime()
-          : new Date(b.date).getTime() - new Date(a.date).getTime();
-      } else if (currentSort.field === "total") {
-        return currentSort.direction === "asc"
-          ? a.total - b.total
-          : b.total - a.total;
-      } else if (currentSort.field === "customer") {
-        return currentSort.direction === "asc"
-          ? a.customerDetails.name.localeCompare(b.customerDetails.name)
-          : b.customerDetails.name.localeCompare(a.customerDetails.name);
-      }
-      return 0;
-    });
-
-  const lastPostIndex = currentPage * itemsPerPage;
-  const firstPostIndex = lastPostIndex - itemsPerPage;
-  const currentPosts = filteredInvoices.slice(firstPostIndex, lastPostIndex);
+  }, [currentPage, searchTerm, currentSort.field, currentSort.direction, statusFilter, dateRange.start, dateRange.end, itemsPerPage]);
 
   const handleFilterChange = (newStatus: string) => {
     setStatusFilter(newStatus);
@@ -187,6 +190,7 @@ export default function InvoicesList() {
       field,
       direction: prev.field === field && prev.direction === "asc" ? "desc" : "asc",
     }));
+    setCurrentPage(1); // Reset to first page when sorting changes
   };
 
   const getSortIcon = (field: string) => {
@@ -546,8 +550,8 @@ export default function InvoicesList() {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {currentPosts.length > 0 ? (
-                      currentPosts.map((invoice, index) => (
+                    {invoicesStructure.length > 0 ? (
+                      invoicesStructure.map((invoice, index) => (
                         <tr
                           key={invoice._id}
                           className={`hover:bg-gradient-to-r hover:from-indigo-50 hover:to-purple-50 transition-all duration-200 ${
@@ -660,14 +664,14 @@ export default function InvoicesList() {
               <div className="px-6 py-4 bg-gradient-to-r from-gray-50 to-white border-t border-gray-200">
                 <div className="flex flex-col sm:flex-row items-center justify-between space-y-4 sm:space-y-0">
                   <div className="text-sm text-gray-700 font-medium">
-                    Showing {filteredInvoices.length > 0 ? firstPostIndex + 1 : 0} to{" "}
-                    {Math.min(lastPostIndex, filteredInvoices.length)} of{" "}
-                    {filteredInvoices.length} results
+                    Showing {totalItems > 0 ? ((currentPage - 1) * itemsPerPage) + 1 : 0} to{" "}
+                    {Math.min(currentPage * itemsPerPage, totalItems)} of{" "}
+                    {totalItems} results
                   </div>
                   <div className="flex-shrink-0">
                     <Pagination
                       currentPage={currentPage}
-                      totalPages={Math.ceil(filteredInvoices.length / itemsPerPage)}
+                      totalPages={totalPages}
                       onPageChange={(page) => setCurrentPage(page)}
                     />
                   </div>

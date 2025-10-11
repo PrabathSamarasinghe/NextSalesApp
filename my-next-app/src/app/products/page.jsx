@@ -6,28 +6,15 @@ import Pagination from "@/components/Pagination";
 import LoadingPage from "@/components/loadingPage";
 
 export default function ProductsPage() {
-  // [Previous state and effect declarations remain exactly the same...]
   const [loading, setLoading] = useState(true);
-  const [role, setRole] = useState(); // Replace with actual role fetching logic
-  // const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
+  const [role, setRole] = useState();
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(6);
-  // const [producttoUpdate, setProductToUpdate] = useState({
-  //   _id: "",
-  //   name: "",
-  //   price: 0,
-  //   category: "",
-  //   stock: 0,
-  // });
-  const [products, setProducts] = useState([
-    {
-      _id: "",
-      name: "",
-      price: 0,
-      category: "",
-      stock: 0,
-    },
-  ]);
+  const [products, setProducts] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const navigate = useRouter();
 
   useLayoutEffect(() => {
     const fetchRole = async () => {
@@ -39,38 +26,44 @@ export default function ProductsPage() {
         console.error("Error fetching role:", error);
       }
     };
+    fetchRole();
+  }, []);
+
+  useLayoutEffect(() => {
     const fetchProducts = async () => {
+      setLoading(true);
       try {
-        const response = await fetch("/api/product/all", {
+        // Build query parameters for backend pagination
+        const params = new URLSearchParams({
+          page: currentPage.toString(),
+          limit: itemsPerPage.toString(),
+          search: searchTerm,
+          sortField: "name",
+          sortDirection: "asc",
+        });
+
+        const response = await fetch(`/api/product/paginated?${params}`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
           },
         });
         const data = await response.json();
-        setProducts(data);
-        setLoading(false);
+
+        if (data.products) {
+          setProducts(data.products);
+          setTotalPages(data.pagination.totalPages);
+          setTotalItems(data.pagination.totalItems);
+        }
       } catch (error) {
         console.error("Error fetching products:", error);
+      } finally {
+        setLoading(false);
       }
     };
-    fetchRole();
+
     fetchProducts();
-  }, []);
-  const [searchTerm, setSearchTerm] = useState("");
-  const navigate = useRouter();
-
-  const lastPostIndex = currentPage * itemsPerPage;
-  const firstPostIndex = lastPostIndex - itemsPerPage;
-  const currentPosts = products.slice(firstPostIndex, lastPostIndex);
-
-  const filteredProducts = searchTerm
-    ? currentPosts.filter(
-        (product) =>
-          product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          product.category.toLowerCase().includes(searchTerm.toLowerCase())
-      )
-    : currentPosts;
+  }, [currentPage, searchTerm, itemsPerPage]);
 
   if (loading) {
     return <LoadingPage />;
@@ -164,7 +157,7 @@ export default function ProductsPage() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredProducts.map((product) => (
+                {products.map((product) => (
                   <tr
                     key={product._id}
                     className="hover:bg-gray-50 transition-colors"
@@ -279,7 +272,7 @@ export default function ProductsPage() {
             </table>
           </div>
 
-          {filteredProducts.length === 0 && (
+          {products.length === 0 && (
             <div className="text-center py-12">
               <div className="text-gray-400 mb-2">
                 <Search size={48} className="mx-auto opacity-50" />
@@ -295,13 +288,13 @@ export default function ProductsPage() {
 
           <div className="mt-6 flex flex-col sm:flex-row justify-between items-center gap-4">
             <div className="text-sm text-gray-500">
-              Showing {firstPostIndex + 1} to{" "}
-              {Math.min(lastPostIndex, products.length)} of {products.length}{" "}
+              Showing {totalItems > 0 ? ((currentPage - 1) * itemsPerPage) + 1 : 0} to{" "}
+              {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems}{" "}
               products
             </div>
             <Pagination
               currentPage={currentPage}
-              totalPages={Math.ceil(products.length / itemsPerPage)}
+              totalPages={totalPages}
               onPageChange={setCurrentPage}
             />
           </div>

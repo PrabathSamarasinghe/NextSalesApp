@@ -46,10 +46,11 @@ export default function CustomerList() {
   //   const loadingContext = useContext(LoadingContext);
 
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
 
   useLayoutEffect(() => {
     const fetchRole = async () => {
-      setLoading(true); // Set loading to true when fetching role
       try {
         const response = await fetch("/api/admin/auth");
         const data = await response.json();
@@ -58,44 +59,66 @@ export default function CustomerList() {
         console.error("Error fetching role:", error);
       }
     };
+    fetchRole();
+  }, []);
+
+  useLayoutEffect(() => {
     const fetchCustomers = async () => {
-      const response = await fetch("/api/customer/all");
-      const data = await response.json();
+      setLoading(true);
       try {
-        const totals = await Promise.all(
-          data.map(async (customer: Customer) => {
-            try {
-              const response = await fetch(`/api/invoice/other/`, {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ customerId: customer._id }),
-              });
-              const data = await response.json();
-              return {
-                ...customer,
-                totalSpent: data.totalSpent,
-                lastPurchase: data.lastPurchaseDate,
-              };
-            } catch (err) {
-              console.error(
-                `Error fetching totalSpent for customer ${customer._id}:`,
-                err
-              );
-              return { ...customer, totalSpent: 0, lastPurchase: null }; // Fallback to 0 and null for lastPurchase
-            }
-          })
-        );
-        setCustomers(totals);
-        setLoading(false); // Set loading to false after fetching customers
+        // Build query parameters for backend pagination
+        const params = new URLSearchParams({
+          page: currentPage.toString(),
+          limit: itemsPerPage.toString(),
+          search: searchTerm,
+          sortField: sortField,
+          sortDirection: sortDirection,
+        });
+
+        const response = await fetch(`/api/customer/paginated?${params}`);
+        const data = await response.json();
+
+        if (data.customers) {
+          // Fetch additional data for each customer (totalSpent and lastPurchase)
+          const customersWithTotals = await Promise.all(
+            data.customers.map(async (customer: Customer) => {
+              try {
+                const response = await fetch(`/api/invoice/other/`, {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({ customerId: customer._id }),
+                });
+                const invoiceData = await response.json();
+                return {
+                  ...customer,
+                  totalSpent: invoiceData.totalSpent,
+                  lastPurchase: invoiceData.lastPurchaseDate,
+                };
+              } catch (err) {
+                console.error(
+                  `Error fetching totalSpent for customer ${customer._id}:`,
+                  err
+                );
+                return { ...customer, totalSpent: 0, lastPurchase: null };
+              }
+            })
+          );
+
+          setCustomers(customersWithTotals);
+          setTotalPages(data.pagination.totalPages);
+          setTotalItems(data.pagination.totalItems);
+        }
       } catch (error) {
         console.error("Error fetching customers:", error);
+      } finally {
+        setLoading(false);
       }
     };
-    fetchRole();
+
     fetchCustomers();
-  }, []);
+  }, [currentPage, searchTerm, sortField, sortDirection, itemsPerPage]);
 
   const handleSort = (field: string) => {
     if (sortField === field) {
@@ -115,45 +138,6 @@ export default function CustomerList() {
     });
   };
 
-  // Filter and sort customers
-  const filteredCustomers = customers
-    .filter(
-      (customer) =>
-        customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        customer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        customer.phone.includes(searchTerm)
-    )
-    .sort((a, b) => {
-      if (sortField === "totalSpent") {
-        return sortDirection === "asc"
-          ? a.totalSpent - b.totalSpent
-          : b.totalSpent - a.totalSpent;
-      } else if (sortField === "lastPurchase") {
-        if (!a.lastPurchase) return sortDirection === "asc" ? -1 : 1;
-        if (!b.lastPurchase) return sortDirection === "asc" ? 1 : -1;
-        return sortDirection === "asc"
-          ? new Date(a.lastPurchase).getTime() -
-              new Date(b.lastPurchase).getTime()
-          : new Date(b.lastPurchase).getTime() -
-              new Date(a.lastPurchase).getTime();
-      } else {
-        // Sort by name or other string fields
-        const valueA =
-          (typeof a[sortField] === "string"
-            ? a[sortField]?.toLowerCase()
-            : String(a[sortField])) || "";
-        const valueB =
-          (typeof b[sortField] === "string"
-            ? b[sortField]?.toLowerCase()
-            : String(b[sortField])) || "";
-        return sortDirection === "asc"
-          ? valueA.localeCompare(valueB)
-          : valueB.localeCompare(valueA);
-      }
-    });
-  const lastPostIndex = currentPage * itemsPerPage;
-  const firstPostIndex = lastPostIndex - itemsPerPage;
-  const currentPosts = filteredCustomers.slice(firstPostIndex, lastPostIndex);
   const viewCustomerDetails = (customerId: string) => {
     navigate.push(`/customerdata/${customerId}`);
   };
@@ -210,7 +194,7 @@ export default function CustomerList() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Total Customers</p>
-                <p className="text-2xl font-bold text-gray-900">{customers.length}</p>
+                <p className="text-2xl font-bold text-gray-900">{totalItems}</p>
               </div>
               <div className="p-3 bg-blue-100 rounded-full">
                 <Users className="w-6 h-6 text-blue-600" />
@@ -220,7 +204,7 @@ export default function CustomerList() {
           <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6 hover:shadow-xl transition-shadow duration-300">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Active Customers</p>
+                <p className="text-sm font-medium text-gray-600">Current Page</p>
                 <p className="text-2xl font-bold text-gray-900">
                   {customers.filter(c => c.lastPurchase).length}
                 </p>
@@ -233,7 +217,7 @@ export default function CustomerList() {
           <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6 hover:shadow-xl transition-shadow duration-300">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Total Revenue</p>
+                <p className="text-sm font-medium text-gray-600">Current Page Revenue</p>
                 <p className="text-2xl font-bold text-gray-900">
                   Rs.{new Intl.NumberFormat("en-IN", {
                     minimumFractionDigits: 0,
@@ -354,8 +338,8 @@ export default function CustomerList() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-100">
-                {currentPosts.length > 0 ? (
-                  currentPosts.map((customer, index) => (
+                {customers.length > 0 ? (
+                  customers.map((customer, index) => (
                     <tr 
                       key={customer._id} 
                       className={`hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 transition-all duration-200 ${
@@ -434,13 +418,13 @@ export default function CustomerList() {
           <div className="px-6 py-4 bg-gradient-to-r from-gray-50 to-white border-t border-gray-100">
             <div className="flex justify-between items-center">
               <div className="text-sm text-gray-600 bg-white px-3 py-1.5 rounded-lg shadow-sm border border-gray-200">
-                Showing <span className="font-medium text-gray-900">{firstPostIndex + 1}</span> to{" "}
-                <span className="font-medium text-gray-900">{Math.min(lastPostIndex, filteredCustomers.length)}</span> of{" "}
-                <span className="font-medium text-gray-900">{filteredCustomers.length}</span> results
+                Showing <span className="font-medium text-gray-900">{((currentPage - 1) * itemsPerPage) + 1}</span> to{" "}
+                <span className="font-medium text-gray-900">{Math.min(currentPage * itemsPerPage, totalItems)}</span> of{" "}
+                <span className="font-medium text-gray-900">{totalItems}</span> results
               </div>
               <Pagination
                 currentPage={currentPage}
-                totalPages={Math.ceil(filteredCustomers.length / itemsPerPage)}
+                totalPages={totalPages}
                 onPageChange={setCurrentPage}
               />
             </div>

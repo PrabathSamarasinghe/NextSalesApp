@@ -14,6 +14,70 @@ export async function getProducts() {
 }
 };
 
+export async function getProductsPaginated({
+  page = 1,
+  limit = 10,
+  search = '',
+  category = '',
+  sortField = 'name',
+  sortDirection = 'asc'
+}: {
+  page?: number;
+  limit?: number;
+  search?: string;
+  category?: string;
+  sortField?: string;
+  sortDirection?: 'asc' | 'desc';
+}) {
+  try {
+    await connectDB();
+    
+    const skip = (page - 1) * limit;
+    const sortOrder = sortDirection === 'asc' ? 1 : -1;
+    
+    // Build search and filter query
+    const query: any = {};
+    
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { category: { $regex: search, $options: 'i' } }
+      ];
+    }
+    
+    if (category) {
+      query.category = { $regex: category, $options: 'i' };
+    }
+    
+    // Get total count for pagination
+    const total = await Product.countDocuments(query);
+    
+    // Get paginated products
+    const products = await Product.find(query)
+      .sort({ [sortField]: sortOrder })
+      .skip(skip)
+      .limit(limit)
+      .lean();
+    
+    return {
+      products,
+      pagination: {
+        currentPage: page,
+        totalPages: Math.ceil(total / limit),
+        totalItems: total,
+        itemsPerPage: limit,
+        hasNextPage: page < Math.ceil(total / limit),
+        hasPrevPage: page > 1
+      }
+    };
+  } catch (error: unknown) {
+    return { 
+        status: 500, 
+         message: error instanceof Error ? error.message : 'An unknown error occurred'
+    };
+  }
+}
+
 export async function addProduct(productData: {
   name: string;
   price: number;
