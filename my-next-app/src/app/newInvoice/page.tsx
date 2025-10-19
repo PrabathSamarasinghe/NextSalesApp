@@ -282,11 +282,14 @@ export default function InvoiceEntry(): JSX.Element {
         body: JSON.stringify(invoiceData),
       });
 
-      if (!response.ok) {
-        throw new Error("Network response was not ok");
+      const data = await response.json();
+      
+      if (!response.ok || data.status >= 400) {
+        setLoading(false);
+        alert(`Failed to save invoice: ${data.message || 'Unknown error'}`);
+        return;
       }
 
-      const data = await response.json();
       console.log("Invoice saved successfully:", data);
       setInvoice({
         invoiceNumber: "",
@@ -315,6 +318,7 @@ export default function InvoiceEntry(): JSX.Element {
       }
     } catch (error) {
       console.error("Error saving invoice:", error);
+      setLoading(false);
       alert("Failed to save invoice. Please try again.");
     }
   };

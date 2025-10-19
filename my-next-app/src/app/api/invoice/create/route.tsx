@@ -4,9 +4,9 @@ export async function POST(request: Request) {
   const body = await request.json();
   const  invoice  = body;
   try {
-    const newInvoice = await createInvoice(invoice);
-    return new Response(JSON.stringify(newInvoice), { status: 201 });
+    const result = await createInvoice(invoice);
+    return new Response(JSON.stringify(result), { status: result.status });
   } catch (error: unknown) {
-    return new Response((error as Error).message, { status: 500 });
+    return new Response(JSON.stringify({ message: (error as Error).message }), { status: 500 });
   }
 }

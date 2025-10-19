@@ -296,12 +296,15 @@ export default function InvoiceEntry(): JSX.Element {
         body: JSON.stringify({ invoiceId: invoiceId, invoiceData }),
       });
 
-      if (!response.ok) {
-        throw new Error("Network response was not ok");
+      const data = await response.json();
+      
+      if (!response.ok || data.status >= 400) {
+        setLoading(false);
+        alert(`Failed to update invoice: ${data.message || 'Unknown error'}`);
+        return;
       }
 
-      const data = await response.json();
-      console.log("Invoice saved successfully:", data);
+      console.log("Invoice updated successfully:", data);
       setInvoice({
         invoiceNumber: "",
         date: new Date().toISOString().split("T")[0],
@@ -322,11 +325,12 @@ export default function InvoiceEntry(): JSX.Element {
         notes: "",
       });
       setLoading(false);
-      alert("Invoice saved successfully");
+      alert("Invoice updated successfully");
       router.push("/invoices");
     } catch (error) {
-      console.error("Error saving invoice:", error);
-      alert("Failed to save invoice. Please try again.");
+      console.error("Error updating invoice:", error);
+      setLoading(false);
+      alert("Failed to update invoice. Please try again.");
     }
   };
   if (loading) {

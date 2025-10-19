@@ -72,13 +72,23 @@ export const updateInvoice = async (invoiceId, invoiceData) => {
       existingMap.set(item.product.toString(), item.quantity);
     }
 
-    // Update stock based on new items within transaction
-    for (const newItem of invoiceData.items) {
-      const productId = newItem.product.toString();
+    // Create a map of product ID to quantity for new invoice
+    const newMap = new Map();
+    for (const item of invoiceData.items) {
+      newMap.set(item.product.toString(), item.quantity);
+    }
+
+    // Process all products in the update
+    const allProductIds = new Set([...existingMap.keys(), ...newMap.keys()]);
+    
+    for (const productId of allProductIds) {
       const oldQty = existingMap.get(productId) || 0;
-      const newQty = newItem.quantity;
+      const newQty = newMap.get(productId) || 0;
 
       const stockChange = oldQty - newQty; // If positive, restock; if negative, deduct more
+      
+      // Skip if no change
+      if (stockChange === 0) continue;
       
       // Check stock availability if we need to deduct more
       if (stockChange < 0) {
