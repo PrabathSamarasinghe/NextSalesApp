@@ -1,5 +1,6 @@
 "use client";
 import { useState, useLayoutEffect } from "react";
+import useDebounce from "@/lib/hooks/useDebounce";
 import {
   Search,
   Filter,
@@ -77,6 +78,8 @@ export default function InvoicesList() {
   const [isAdvancePaymentClicked, setIsAdvancePaymentClicked] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
+
   useLayoutEffect(() => {
     const fetchRole = async () => {
       try {
@@ -127,6 +130,11 @@ export default function InvoicesList() {
 
   useLayoutEffect(() => {
     const fetchInvoices = async () => {
+      // Skip API when user has typed a single character (reduce noisy calls)
+      if (!(debouncedSearchTerm === "" || debouncedSearchTerm.length >= 2)) {
+        return;
+      }
+
       setIsLoading(true);
       setLoading(true);
       try {
@@ -134,7 +142,7 @@ export default function InvoicesList() {
         const params = new URLSearchParams({
           page: currentPage.toString(),
           limit: itemsPerPage.toString(),
-          search: searchTerm,
+          search: debouncedSearchTerm,
           sortField: currentSort.field,
           sortDirection: currentSort.direction,
           statusFilter: statusFilter,
@@ -173,7 +181,7 @@ export default function InvoicesList() {
     };
 
     fetchInvoices();
-  }, [currentPage, searchTerm, currentSort.field, currentSort.direction, statusFilter, dateRange.start, dateRange.end, itemsPerPage]);
+  }, [currentPage, debouncedSearchTerm, currentSort.field, currentSort.direction, statusFilter, dateRange.start, dateRange.end, itemsPerPage]);
 
   const handleFilterChange = (newStatus: string) => {
     setStatusFilter(newStatus);

@@ -1,5 +1,6 @@
 "use client";
 import { useState, useLayoutEffect } from "react";
+import useDebounce from "@/lib/hooks/useDebounce";
 import { Plus, Search, Trash2, ArrowLeft, FileText } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Pagination from "@/components/Pagination";
@@ -16,6 +17,8 @@ export default function ProductsPage() {
   const [totalItems, setTotalItems] = useState(0);
   const navigate = useRouter();
 
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
+
   useLayoutEffect(() => {
     const fetchRole = async () => {
       try {
@@ -31,13 +34,18 @@ export default function ProductsPage() {
 
   useLayoutEffect(() => {
     const fetchProducts = async () => {
+      // Only perform search when debounced term is empty or length >= 2
+      if (!(debouncedSearchTerm === "" || debouncedSearchTerm.length >= 2)) {
+        return;
+      }
+
       setLoading(true);
       try {
         // Build query parameters for backend pagination
         const params = new URLSearchParams({
           page: currentPage.toString(),
           limit: itemsPerPage.toString(),
-          search: searchTerm,
+          search: debouncedSearchTerm,
           sortField: "name",
           sortDirection: "asc",
         });
@@ -63,7 +71,7 @@ export default function ProductsPage() {
     };
 
     fetchProducts();
-  }, [currentPage, searchTerm, itemsPerPage]);
+  }, [currentPage, debouncedSearchTerm, itemsPerPage]);
 
   if (loading) {
     return <LoadingPage />;

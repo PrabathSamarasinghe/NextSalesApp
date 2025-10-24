@@ -1,5 +1,6 @@
 "use client";
 import { useState, useLayoutEffect } from "react";
+import useDebounce from "@/lib/hooks/useDebounce";
 import {
   Search,
   ChevronDown,
@@ -51,6 +52,8 @@ export default function ReceivedInvoicesList() {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const navigate = useRouter();
 
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
+
   useLayoutEffect(() => {
     const fetchRole = async () => {
       try {
@@ -66,6 +69,11 @@ export default function ReceivedInvoicesList() {
     
   useLayoutEffect(() => {
     const fetchInvoices = async () => {
+      // Skip API when search is a single character to reduce noise
+      if (!(debouncedSearchTerm === "" || debouncedSearchTerm.length >= 2)) {
+        return;
+      }
+
       setIsLoading(true);
       setLoading(true);
       try {
@@ -73,7 +81,7 @@ export default function ReceivedInvoicesList() {
         const params = new URLSearchParams({
           page: currentPage.toString(),
           limit: itemsPerPage.toString(),
-          search: searchTerm,
+          search: debouncedSearchTerm,
           sortField: currentSort.field,
           sortDirection: currentSort.direction,
         });
@@ -101,7 +109,7 @@ export default function ReceivedInvoicesList() {
     };
     
     fetchInvoices();
-  }, [currentPage, searchTerm, currentSort.field, currentSort.direction, itemsPerPage]);
+  }, [currentPage, debouncedSearchTerm, currentSort.field, currentSort.direction, itemsPerPage]);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);

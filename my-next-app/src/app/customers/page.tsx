@@ -1,5 +1,6 @@
 "use client";
 import { useState, useLayoutEffect } from "react";
+import useDebounce from "@/lib/hooks/useDebounce";
 import {
   Search,
   ArrowUpDown,
@@ -49,6 +50,9 @@ export default function CustomerList() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
 
+  // Debounce search input so we don't call API for every keystroke
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
+
   useLayoutEffect(() => {
     const fetchRole = async () => {
       try {
@@ -64,13 +68,19 @@ export default function CustomerList() {
 
   useLayoutEffect(() => {
     const fetchCustomers = async () => {
+      // Only perform search when debounced term is empty (show all) or length >= 2
+      if (!(debouncedSearchTerm === "" || debouncedSearchTerm.length >= 2)) {
+        // skip API call for single-character search
+        return;
+      }
+
       setLoading(true);
       try {
         // Build query parameters for backend pagination
         const params = new URLSearchParams({
           page: currentPage.toString(),
           limit: itemsPerPage.toString(),
-          search: searchTerm,
+          search: debouncedSearchTerm,
           sortField: sortField,
           sortDirection: sortDirection,
         });
@@ -118,7 +128,7 @@ export default function CustomerList() {
     };
 
     fetchCustomers();
-  }, [currentPage, searchTerm, sortField, sortDirection, itemsPerPage]);
+  }, [currentPage, debouncedSearchTerm, sortField, sortDirection, itemsPerPage]);
 
   const handleSort = (field: string) => {
     if (sortField === field) {

@@ -4,11 +4,11 @@ import Product from "@/lib/models/Product.model";
 import mongoose from "mongoose";
 
 export const createInvoice = async (invoiceData) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
-  
+  let session;
   try {
     await connectDB();
+    session = await mongoose.startSession();
+    session.startTransaction();
     
     // Update product stocks within transaction
     await Promise.all(
@@ -41,22 +41,31 @@ export const createInvoice = async (invoiceData) => {
     return { status: 201, message: "Invoice created successfully", invoiceId: invoice._id };
   } catch (error) {
     // Rollback transaction on error
-    await session.abortTransaction();
-    
+    try {
+      // session may be undefined if startSession failed; guard it
+      if (typeof session !== "undefined") await session.abortTransaction();
+    } catch (abortErr) {
+      console.error("Error aborting transaction:", abortErr);
+    }
+
     return {
       status: 500,
       message: error.message,
     };
   } finally {
-    session.endSession();
+    try {
+      if (typeof session !== "undefined") session.endSession();
+    } catch (endErr) {
+      console.error("Error ending session:", endErr);
+    }
   }
 };
 export const updateInvoice = async (invoiceId, invoiceData) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
-  
+  let session;
   try {
     await connectDB();
+    session = await mongoose.startSession();
+    session.startTransaction();
 
     const invoice = await Invoice.findById(invoiceId).session(session);
     if (!invoice) {
@@ -118,14 +127,22 @@ export const updateInvoice = async (invoiceId, invoiceData) => {
     return { status: 200, message: "Invoice updated successfully" };
   } catch (error) {
     console.error("Invoice update failed:", error);
-    await session.abortTransaction();
-    
+    try {
+      if (typeof session !== "undefined") await session.abortTransaction();
+    } catch (abortErr) {
+      console.error("Error aborting transaction:", abortErr);
+    }
+
     return {
       status: 500,
       message: error.message,
     };
   } finally {
-    session.endSession();
+    try {
+      if (typeof session !== "undefined") session.endSession();
+    } catch (endErr) {
+      console.error("Error ending session:", endErr);
+    }
   }
 };
 
@@ -215,11 +232,11 @@ export const getInvoicesPaginated = async ({
 };
 
 export const deleteInvoice = async (invoiceId) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
-  
+  let session;
   try {
     await connectDB();
+    session = await mongoose.startSession();
+    session.startTransaction();
     
     const invoice = await Invoice.findById(invoiceId).session(session);
     if (!invoice) {
@@ -246,23 +263,31 @@ export const deleteInvoice = async (invoiceId) => {
     
     return { status: 200, message: "Invoice deleted successfully" };
   } catch (error) {
-    await session.abortTransaction();
-    
+    try {
+      if (typeof session !== "undefined") await session.abortTransaction();
+    } catch (abortErr) {
+      console.error("Error aborting transaction:", abortErr);
+    }
+
     return {
       status: 500,
       message: error.message,
     };
   } finally {
-    session.endSession();
+    try {
+      if (typeof session !== "undefined") session.endSession();
+    } catch (endErr) {
+      console.error("Error ending session:", endErr);
+    }
   }
 };
 
 export const cancelInvoice = async (invoiceId) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
-  
+  let session;
   try {
     await connectDB();
+    session = await mongoose.startSession();
+    session.startTransaction();
     
     const invoice = await Invoice.findById(invoiceId).session(session);
     if (!invoice) {
@@ -298,14 +323,22 @@ export const cancelInvoice = async (invoiceId) => {
 
     return { status: 200, message: "Invoice cancelled successfully" };
   } catch (error) {
-    await session.abortTransaction();
-    
+    try {
+      if (typeof session !== "undefined") await session.abortTransaction();
+    } catch (abortErr) {
+      console.error("Error aborting transaction:", abortErr);
+    }
+
     return {
       status: 500,
       message: error.message,
     };
   } finally {
-    session.endSession();
+    try {
+      if (typeof session !== "undefined") session.endSession();
+    } catch (endErr) {
+      console.error("Error ending session:", endErr);
+    }
   }
 };
 
